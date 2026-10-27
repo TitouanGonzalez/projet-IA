@@ -1,3 +1,51 @@
+# Checkpoint, design system du PFE
+
+PFE de M2 UX/UI (ECV Bordeaux, 2026-2027) de Titouan Gonzalez. Checkpoint est un service en français, sur mobile et sur ordinateur. Il dit à un joueur en situation de handicap si un jeu est jouable pour lui avant l'achat. Le service part des besoins de la personne, jamais de son diagnostic. Le commanditaire fictif est l'association CapGame.
+
+![DS-Studio avec les tokens Checkpoint](docs/images/ds-studio-checkpoint.png)
+
+## Ce que contient ce dépôt
+
+- Un banc d'essai DS-Studio (le starter de l'enseignant, repris ci-dessous) réglé sur Checkpoint : 11 couleurs, la police Atkinson Hyperlegible Next, une taille de corps de 16 px et un rayon de 8 px, avec un aperçu qui montre de vrais jeux.
+- Le contexte du projet dans `workspace/` : `PFE.md` (sujet et publics), `DESIGN_RULES.md` (règles de conception) et `DECISIONS.md` (journal des choix, limites comprises).
+
+## Le verdict, en trois états
+
+| Verdict                  | Sens                                                                                                                         |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| Jouable                  | Tous tes besoins indispensables sont couverts par le jeu.                                                                    |
+| Jouable avec adaptations | Au moins un besoin n'est pas couvert par le jeu, mais un réglage, un logiciel ou ton matériel le compense, et c'est vérifié. |
+| Pas jouable en l'état    | Au moins un besoin indispensable n'est pas couvert, et rien de vérifié ne le compense.                                       |
+
+Chaque verdict a une icône et un texte : la couleur ne porte jamais l'information seule.
+
+## Le design system dans Figma
+
+La référence complète vit dans Figma (accès réservé) : https://www.figma.com/design/2uqWKJjv2XY5Z5brHiiXVc
+
+- 35 écrans : ordinateur 1440 px, mobile 390 x 844 et tablette 1194 px, avec une version mobile sous chaque écran ordinateur sauf le tableau de résultats.
+- Une base Carbon (IBM) pour la structure, l'échelle d'espacement, les états et l'accessibilité. Les couleurs, la police et les rayons sont propres à Checkpoint.
+- Cibles cliquables de 48 px minimum, focus visible, libellés toujours visibles au-dessus des champs, deux modes de couleurs (Clair et Contraste élevé).
+- Un guide de style de huit planches : couleurs avec contrastes, typographie, espacements, gabarits, icônes, accessibilité et inventaire des composants.
+
+DS-Studio ne se connecte pas à Figma. Il ne contient que 18 tokens plats, le reste du système reste dans le fichier Figma.
+
+## Données de démonstration
+
+Les jeux et leurs tags d'accessibilité viennent des boutiques (relevé du 26 octobre 2026). Les avis de joueurs, les vérifications et les sessions CapGame sont un scénario inventé pour le PFE.
+
+## Lancer DS-Studio
+
+```
+npm ci
+npm run build
+npm start
+```
+
+Puis ouvrir http://127.0.0.1:4310. La suite de ce fichier est le README d'origine du starter.
+
+---
+
 # DS-Studio V2
 
 Un atelier **web local** pour explorer, modifier et faire évoluer un Design System.
