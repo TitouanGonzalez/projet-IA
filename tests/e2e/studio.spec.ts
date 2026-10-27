@@ -30,13 +30,13 @@ test('boucle centrale réelle : diff, validation, propagation, recharge, annulat
   await dialog.getByRole('button', { name: 'Valider et enregistrer' }).click();
   await expect(mainButton).toHaveCSS('background-color', 'rgb(138, 59, 32)');
   await expect(
-    catalogue.getByRole('button', { name: 'Réserver une place', exact: true }),
+    catalogue.getByRole('button', { name: 'Suivre ce jeu', exact: true }),
   ).toHaveCSS('background-color', 'rgb(138, 59, 32)');
   await expect(
-    mobile.getByRole('button', { name: 'Réserver une place', exact: true }),
+    mobile.getByRole('button', { name: 'Suivre ce jeu', exact: true }),
   ).toHaveCSS('background-color', 'rgb(138, 59, 32)');
   await expect(
-    mobile.getByRole('button', { name: 'Découvrir', exact: true }),
+    mobile.getByRole('button', { name: 'Un jeu', exact: true }),
   ).toHaveCSS('background-color', 'rgb(138, 59, 32)');
   await page.reload();
   await expect(mainButton).toHaveCSS('background-color', 'rgb(138, 59, 32)');
@@ -54,7 +54,7 @@ test('boucle centrale réelle : diff, validation, propagation, recharge, annulat
   await expect(mainButton).toHaveCSS('background-color', 'rgb(49, 84, 196)');
   await expect(mainButton).toHaveCSS('padding-left', '22px');
   await expect(
-    mobile.getByRole('button', { name: 'Réserver une place', exact: true }),
+    mobile.getByRole('button', { name: 'Suivre ce jeu', exact: true }),
   ).toHaveCSS('background-color', 'rgb(49, 84, 196)');
   await page.screenshot({ path: 'test-results/studio.png', fullPage: true });
 });
@@ -100,23 +100,25 @@ test('largeurs réelles, interactions, formulaire et desktop responsive', async 
     .getByRole('combobox', { name: 'Viewport', exact: true })
     .selectOption('1');
   await frame
-    .getByRole('button', { name: 'Réserver une place', exact: true })
+    .getByRole('button', { name: 'Suivre ce jeu', exact: true })
     .click();
   await expect(
-    frame.getByRole('button', { name: 'Réservation confirmée ✓' }),
+    frame.getByRole('button', { name: 'Jeu suivi' }),
   ).toBeVisible();
-  await frame.getByRole('button', { name: 'Favoris', exact: true }).click();
+  await frame.getByRole('button', { name: 'Trouver', exact: true }).click();
   await expect(
-    frame.getByText('Vos ateliers favoris apparaîtront ici.'),
+    frame.getByText('Les jeux jouables pour toi apparaîtront ici.'),
   ).toBeVisible();
   await page
     .getByRole('combobox', { name: 'Scénario', exact: true })
     .selectOption('form');
-  await frame.getByLabel('Votre prénom').fill('Camille');
-  await frame.getByLabel('Adresse e-mail').fill('camille@example.com');
+  await frame.getByLabel('Ton prénom').fill('Léa');
+  await frame.getByLabel('Ton adresse e-mail').fill('lea@example.com');
   await frame.getByRole('checkbox').check();
-  await frame.getByRole('button', { name: 'S’inscrire', exact: true }).click();
-  await expect(frame.getByText(/Merci ! Démonstration locale/)).toBeVisible();
+  await frame
+    .getByRole('button', { name: 'Créer mon profil', exact: true })
+    .click();
+  await expect(frame.getByText(/Profil de démonstration créé/)).toBeVisible();
   await page.setViewportSize({ width: 700, height: 900 });
   expect(
     await page

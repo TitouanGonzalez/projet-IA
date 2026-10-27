@@ -458,7 +458,7 @@ export default function App() {
               <h2 id="ds-title" tabIndex={-1}>
                 Design System
               </h2>
-              <p>Checkpoint · exemple fictif, sources locales</p>
+              <p>Checkpoint · design system du PFE, sources locales</p>
             </div>
             <span className="revision-tag">r{state.revision}</span>
           </div>
@@ -650,8 +650,8 @@ export default function App() {
                 value={scenario}
                 onChange={(e) => setScenario(e.target.value)}
               >
-                <option value="cards">Découvrir</option>
-                <option value="form">Inscription</option>
+                <option value="cards">Un jeu</option>
+                <option value="form">Profil</option>
               </select>
             </label>
           </div>
