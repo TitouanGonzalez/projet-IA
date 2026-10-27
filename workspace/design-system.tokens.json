@@ -39,6 +39,10 @@
     "$type": "color",
     "$value": "#18734B"
   },
+  "color.warning": {
+    "$type": "color",
+    "$value": "#8A4B0F"
+  },
   "color.focus": {
     "$type": "color",
     "$value": "#7856C8"

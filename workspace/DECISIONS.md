@@ -22,6 +22,16 @@ Preuves : build, check et tests unitaires passent ; la boucle proposer, diff, va
 
 Limite connue : DS-Studio ne contient que 18 tokens plats. Les modes Clair et Contraste élevé, l’échelle d’espacement complète et les styles de texte restent dans le fichier Figma, qui est la référence. Aucune synchronisation Figma n’existe.
 
+## 27 octobre 2026 : composants Checkpoint dans l’aperçu
+
+Problème : l’aperçu ne contenait que les quatre composants du starter, rien de ce qui fait Checkpoint.
+
+Décision : ajouter trois composants repris du fichier Figma, Verdict (3 états), Statut info (4 états) et Carte jeu, dans une section 05 du catalogue. Chaque état a une icône et un texte. Les fonds doux sont calculés à partir des tokens, donc ils suivent un changement de couleur. Un token a été ajouté, color.warning (#8A4B0F, le verdict avec adaptations), avec une valeur par défaut dans le schéma pour qu’un état enregistré avant l’ajout reste lisible. Les composants existants et les tests n’ont pas été touchés.
+
+Preuves : build et check passent, 27 tests unitaires et 10 tests navigateur réussis, l’état enregistré (révision 14) se relit avec le nouveau token.
+
+Limite connue : c’est une réécriture à la main, pas une synchronisation. Les icônes sont redessinées en SVG simples, les fonds doux sont approchés (14 % de la couleur sur la surface) et ne sont pas identiques au pixel aux valeurs de Figma. Le mode Contraste élevé de Figma n’existe pas dans l’outil.
+
 ## À compléter
 
 Audit du design system Checkpoint, en attente de la consigne de l’enseignant.

@@ -123,6 +123,119 @@ export function Navigation() {
     </nav>
   );
 }
+// Composants Checkpoint, repris du fichier Figma (Verdict, Statut info, Carte jeu).
+// Chaque état porte une icône ET un texte : la couleur ne porte jamais seule l'information.
+function Icon({ size, children }: { size: number; children: ReactNode }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {children}
+    </svg>
+  );
+}
+const icons = {
+  valide: <path d="M5 12.5l4.5 4.5L19 7.5" />,
+  adaptations: (
+    <>
+      <path d="M5 9h14M15 5l4 4-4 4" />
+      <path d="M19 16H5M9 12l-4 4 4 4" />
+    </>
+  ),
+  bloquant: <path d="M6 6l12 12M18 6L6 18" />,
+  verifie: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8 12.5l3 3 5-6" />
+    </>
+  ),
+  declare: (
+    <>
+      <path d="M6 3h8l4 4v14H6z" />
+      <path d="M9 13h6M9 17h6" />
+    </>
+  ),
+  conteste: (
+    <>
+      <path d="M12 3l10 18H2z" />
+      <path d="M12 10v5M12 18v.5" />
+    </>
+  ),
+  inconnu: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.5 9.5a2.6 2.6 0 015 1c0 1.8-2.5 2-2.5 3.7M12 17.5v.5" />
+    </>
+  ),
+};
+export type VerdictState = 'jouable' | 'adaptations' | 'bloquant';
+const verdictLabels: Record<VerdictState, string> = {
+  jouable: 'Jouable pour toi',
+  adaptations: 'Jouable avec adaptations',
+  bloquant: 'Pas jouable en l’état',
+};
+export function Verdict({ state }: { state: VerdictState }) {
+  return (
+    <span className={`ds-verdict ${state}`}>
+      <Icon size={20}>{icons[state === 'jouable' ? 'valide' : state]}</Icon>
+      {verdictLabels[state]}
+    </span>
+  );
+}
+export type StatutState = 'verifie' | 'declare' | 'conteste' | 'inconnu';
+const statutLabels: Record<StatutState, string> = {
+  verifie: 'Vérifié par 14 joueurs',
+  declare: 'Déclaré par le studio',
+  conteste: 'Contesté par 3 joueurs',
+  inconnu: 'On ne sait pas encore',
+};
+export function StatutInfo({ state }: { state: StatutState }) {
+  return (
+    <span className={`ds-statut ${state}`}>
+      <Icon size={16}>{icons[state]}</Icon>
+      {statutLabels[state]}
+    </span>
+  );
+}
+export function GameCard() {
+  return (
+    <article className="ds-gamecard">
+      <div className="ds-cover" role="img" aria-label="Jaquette illustrée" />
+      <h3>Clair Obscur: Expedition 33</h3>
+      <p className="ds-platforms">PS5, Xbox Series, PC</p>
+      <Verdict state="adaptations" />
+      <ul className="ds-needs">
+        <li>
+          <span className="need-ok">
+            <Icon size={20}>{icons.valide}</Icon>
+          </span>
+          Texte et sous-titres réglables
+        </li>
+        <li>
+          <span className="need-adapt">
+            <Icon size={20}>{icons.adaptations}</Icon>
+          </span>
+          Pas de remapping déclaré, ta manette compense
+        </li>
+        <li>
+          <span className="need-ok">
+            <Icon size={20}>{icons.valide}</Icon>
+          </span>
+          Mode Histoire, esquives plus faciles
+        </li>
+      </ul>
+      <StatutInfo state="verifie" />
+    </article>
+  );
+}
 export function Catalogue({ tokens }: { tokens: Tokens }) {
   return (
     <DSProvider tokens={tokens}>
@@ -153,6 +266,23 @@ export function Catalogue({ tokens }: { tokens: Tokens }) {
         <section>
           <div className="section-label">04 / NAVIGATION</div>
           <Navigation />
+        </section>
+        <section>
+          <div className="section-label">05 / CHECKPOINT</div>
+          <h3>Verdict, statut et carte jeu.</h3>
+          <p>Chaque état a une icône et un texte, jamais la couleur seule.</p>
+          <div className="ds-stack">
+            <Verdict state="jouable" />
+            <Verdict state="adaptations" />
+            <Verdict state="bloquant" />
+          </div>
+          <div className="ds-stack">
+            <StatutInfo state="verifie" />
+            <StatutInfo state="declare" />
+            <StatutInfo state="conteste" />
+            <StatutInfo state="inconnu" />
+          </div>
+          <GameCard />
         </section>
       </div>
     </DSProvider>

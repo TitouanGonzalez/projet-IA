@@ -623,6 +623,108 @@ del {
   color: var(--color-success);
   margin-top: var(--space-sm);
 }
+/* Composants Checkpoint : verdict, statut d'information, carte jeu.
+   Les fonds doux sont dérivés des tokens, donc ils suivent un changement de couleur. */
+.ds-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin: var(--space-md) 0;
+}
+.ds-verdict,
+.ds-statut {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-weight: 700;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.ds-verdict {
+  min-height: 40px;
+  padding: 0 var(--space-md);
+  font-size: var(--font-body);
+}
+.ds-statut {
+  min-height: 32px;
+  padding: 0 12px;
+  gap: 4px;
+  font-size: calc(var(--font-body) * 0.9);
+}
+.ds-verdict.jouable,
+.ds-statut.verifie {
+  color: var(--color-success);
+  background: color-mix(
+    in srgb,
+    var(--color-success) 14%,
+    var(--color-surface)
+  );
+}
+.ds-verdict.adaptations,
+.ds-statut.conteste {
+  color: var(--color-warning);
+  background: color-mix(
+    in srgb,
+    var(--color-warning) 14%,
+    var(--color-surface)
+  );
+}
+.ds-verdict.bloquant {
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 14%, var(--color-surface));
+}
+.ds-statut.declare {
+  color: var(--color-brand);
+  background: color-mix(in srgb, var(--color-brand) 12%, var(--color-surface));
+}
+.ds-statut.inconnu {
+  color: var(--color-muted);
+  background: var(--color-canvas);
+}
+.ds-gamecard {
+  display: grid;
+  gap: var(--space-sm);
+  justify-items: start;
+  max-width: 380px;
+  padding: var(--space-lg);
+  border: 1px solid var(--color-border);
+  border-radius: calc(var(--radius-control) * 2);
+  background: var(--color-surface);
+}
+.ds-gamecard h3,
+.ds-gamecard .ds-platforms {
+  margin: 0;
+}
+.ds .ds-platforms {
+  font-size: calc(var(--font-body) * 0.875);
+}
+/* Illustration de démonstration : les jaquettes sont les seules couleurs libres. */
+.ds-cover {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-control);
+  background:
+    radial-gradient(circle at 30% 45%, #f2c14e 0 22%, transparent 23%),
+    radial-gradient(circle at 85% 110%, #5ba0a8 0 48%, transparent 49%), #123b4f;
+}
+.ds-needs {
+  list-style: none;
+  margin: var(--space-sm) 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-sm);
+}
+.ds-needs li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+}
+.need-ok {
+  color: var(--color-success);
+}
+.need-adapt {
+  color: var(--color-warning);
+}
 .ds-form {
   display: flex;
   flex-direction: column;
