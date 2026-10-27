@@ -165,7 +165,7 @@ export function Scenario({
       <div className="scenario">
         <header className="scenario-head">
           <strong>
-            lisière<span>®</span>
+            Checkpoint<span>®</span>
           </strong>
           <span className="ds-badge">Bordeaux</span>
         </header>
@@ -195,7 +195,7 @@ export function Scenario({
             </div>
           )}
         </main>
-        <footer>lisière · Design System d’exemple fictif</footer>
+        <footer>Checkpoint · Design System d’exemple fictif</footer>
       </div>
     </DSProvider>
   );
