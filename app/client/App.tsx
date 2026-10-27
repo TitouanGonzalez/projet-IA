@@ -458,7 +458,7 @@ export default function App() {
               <h2 id="ds-title" tabIndex={-1}>
                 Design System
               </h2>
-              <p>Lisière · exemple fictif, sources locales</p>
+              <p>Checkpoint · exemple fictif, sources locales</p>
             </div>
             <span className="revision-tag">r{state.revision}</span>
           </div>
