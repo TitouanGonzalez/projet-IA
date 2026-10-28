@@ -58,8 +58,16 @@ test('cartes : inclinaison 3D, dossier ouvert avec jauges, retour du focus', asy
   // Le défilement est doux : on attend qu'il soit fini avant de viser la carte.
   await settle(page, '.al-card');
   const box = (await card.boundingBox())!;
-  await page.mouse.move(box.x + box.width - 10, box.y + 10);
-  await expect(card).toHaveAttribute('data-tilt', 'on');
+  await expect
+    .poll(
+      async () => {
+        await page.mouse.move(box.x + box.width - 40, box.y + 40);
+        await page.mouse.move(box.x + box.width - 10, box.y + 10, { steps: 4 });
+        return card.getAttribute('data-tilt');
+      },
+      { timeout: 15000, intervals: [200] },
+    )
+    .toBe('on');
   expect(
     await card.evaluate((el) => el.style.getPropertyValue('--ry')),
   ).not.toBe('0deg');
@@ -191,6 +199,7 @@ test('détecteur : clavier et impulsion avec recharge', async ({ page }) => {
   await page.getByRole('button', { name: 'ENTER' }).click();
   await page.getByRole('button', { name: ':DÉTECTEUR' }).click();
   const tracker = page.locator('.al-trk');
+  await settle(page, '.al-trk-canvas');
   await page.locator('.al-trk-canvas').focus();
   await page.keyboard.press('ArrowRight');
   await expect(tracker).not.toHaveAttribute('data-probe-x', 'none');
@@ -211,9 +220,6 @@ test('détecteur : clavier et impulsion avec recharge', async ({ page }) => {
     ignoreCase: true,
   });
 });
-
-const GOOD_MESSAGE =
-  'Selon le règlement, vous devez assister un équipage en danger. Trois morts, je peux ramener un spécimen. Merci.';
 
 async function openTerminal(page: import('@playwright/test').Page) {
   await page.goto('/');
@@ -254,8 +260,8 @@ test('terminal : une partie gagnée, au clavier puis à la souris', async ({
   await answer(page, /confirmation écrite/);
   await answer(page, null);
   await expect(term).toHaveAttribute('data-phase', 'write');
-  await page.getByLabel('Ton message à la Compagnie').fill(GOOD_MESSAGE);
-  await page.getByRole('button', { name: 'ENVOYER' }).click();
+  // Une phrase toute faite suffit : pas besoin d'écrire.
+  await page.getByRole('button', { name: /Selon le règlement/ }).click();
   await page.getByRole('button', { name: /PASSER L’ANIMATION/ }).click();
   await expect(term).toHaveAttribute('data-phase', 'win');
   await expect(term).toContainText('RÉFÉRENCE AU RÈGLEMENT NOTÉE');
@@ -273,6 +279,7 @@ test('terminal : une partie perdue, la Compagnie refuse', async ({ page }) => {
   await answer(page, /Demander une équipe de secours/);
   await answer(page, null);
   await expect(term).toHaveAttribute('data-phase', 'write');
+  await page.getByRole('button', { name: /Écrire mon propre message/ }).click();
   await page.getByLabel('Ton message à la Compagnie').fill('aidez');
   await page.getByRole('button', { name: 'ENVOYER' }).click();
   await page.getByRole('button', { name: /PASSER L’ANIMATION/ }).click();
@@ -303,6 +310,10 @@ test('terminal : écrire son propre argument, message vide refusé', async ({
   await answer(page, /Écrire toi-même ton argument/);
   await answer(page, null);
   await expect(term).toHaveAttribute('data-phase', 'write');
+  await expect(
+    page.getByRole('list', { name: 'Phrases proposées' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: /Écrire mon propre message/ }).click();
   const field = page.getByLabel('Ton message à la Compagnie');
   await expect(field).toBeFocused();
   const send = page.getByRole('button', { name: 'ENVOYER' });
@@ -377,7 +388,31 @@ test('détecteur : un passage rapide près d’un contact ne fait pas perdre', a
   );
   await page.waitForTimeout(400);
   await page.mouse.move(box.x + 5, box.y + 5);
-  await page.waitForTimeout(3500);
+  await expect
+    .poll(async () => Number(await tracker.getAttribute('data-danger')), {
+      timeout: 20000,
+    })
+    .toBeLessThan(0.5);
   await expect(tracker).toHaveAttribute('data-lost', 'false');
-  expect(Number(await tracker.getAttribute('data-danger'))).toBeLessThan(0.5);
+});
+
+test('terminal : phrases proposées au clavier, retour depuis la saisie libre', async ({
+  page,
+}) => {
+  const term = await openTerminal(page);
+  await answer(page, /matricule/);
+  await answer(page, /Décrire la créature telle qu/);
+  await answer(page, /Proposer de livrer un spécimen/);
+  await answer(page, /confirmation écrite/);
+  await answer(page, null);
+  await expect(term).toHaveAttribute('data-phase', 'write');
+  const list = page.getByRole('list', { name: 'Phrases proposées' });
+  await expect(list.getByRole('button')).toHaveCount(4);
+  await page.keyboard.press('4'); // écrire son propre message
+  await expect(page.getByLabel('Ton message à la Compagnie')).toBeFocused();
+  await page.getByRole('button', { name: /REVENIR AUX PHRASES/ }).click();
+  await expect(list).toBeVisible();
+  await page.keyboard.press('1'); // première phrase proposée
+  await page.getByRole('button', { name: /PASSER L’ANIMATION/ }).click();
+  await expect(term).toHaveAttribute('data-phase', 'win');
 });

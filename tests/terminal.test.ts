@@ -90,8 +90,25 @@ test('toutes les fins sont atteignables, victoires et défaites', () => {
   );
 });
 
-test('on ne peut gagner qu’après avoir écrit soi-même un message', () => {
-  assert.deepEqual(explore().winsWithoutWriting, []);
+test('les phrases proposées suffisent pour gagner, et elles ne se valent pas', () => {
+  for (const id of ['libre_arg', 'plaidoirie']) {
+    const list = nodes[id].free!.suggestions;
+    assert.equal(list.length, 3, id);
+    const effects = list.map((t) => JSON.stringify(analyze(t).effects));
+    assert.equal(new Set(effects).size, 3, `${id} : trois effets différents`);
+  }
+  // Chemin honnête, puis la meilleure phrase proposée : gagné sans rien écrire.
+  let s = start();
+  s = choose(choose(choose(choose(s, 0), 0), 0), 2);
+  assert.equal(s.node, 'plaidoirie');
+  s = submit(s, nodes.plaidoirie.free!.suggestions[0]).state;
+  assert.equal(s.ending, 'aide_acceptee');
+  // Chemin brutal, puis la phrase en majuscules : la Compagnie coupe la liaison.
+  let b = start();
+  b = choose(choose(choose(choose(b, 1), 1), 2), 0);
+  assert.equal(b.node, 'plaidoirie');
+  b = submit(b, nodes.plaidoirie.free!.suggestions[2]).state;
+  assert.equal(b.ending, 'banni');
 });
 
 test('une partie ne dépasse jamais le signal disponible', () => {

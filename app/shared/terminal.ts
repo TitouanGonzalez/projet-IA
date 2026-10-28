@@ -17,7 +17,13 @@ export interface Node {
   prompt: string;
   choices: Choice[];
   // Nœud à saisie libre : le joueur écrit son message, et le texte est analysé.
-  free?: { next: string; hint: string; placeholder: string };
+  free?: {
+    next: string;
+    hint: string;
+    placeholder: string;
+    // Phrases toutes faites : on peut cliquer dessus au lieu d’écrire.
+    suggestions: string[];
+  };
 }
 export interface Ending {
   result: 'win' | 'lose';
@@ -257,6 +263,11 @@ export const nodes: Record<string, Node> = {
       next: 'reglement',
       hint: 'Elle lit les faits précis, le règlement et la politesse. Elle n’aime ni les cris ni les menaces.',
       placeholder: 'Écris ton argument (280 caractères au plus)',
+      suggestions: [
+        'Le règlement impose une assistance à un équipage en détresse.',
+        'Nous pouvons ramener le spécimen vivant pour votre étude.',
+        'Aidez-nous, par pitié.',
+      ],
     },
   },
   plaidoirie: {
@@ -271,6 +282,11 @@ export const nodes: Record<string, Node> = {
       next: 'verdict',
       hint: 'Elle lit les faits précis, le règlement et la politesse. Elle n’aime ni les cris ni les menaces.',
       placeholder: 'Écris ton message (280 caractères au plus)',
+      suggestions: [
+        'Selon le règlement, vous devez assister un équipage en danger. Trois morts, je peux ramener un spécimen. Merci.',
+        'Envoyez des secours, s’il vous plaît, nous sommes en danger.',
+        'ENVOYEZ DES SECOURS TOUT DE SUITE.',
+      ],
     },
   },
   marche: {

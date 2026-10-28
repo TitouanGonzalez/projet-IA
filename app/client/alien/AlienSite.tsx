@@ -605,8 +605,9 @@ export default function AlienSite() {
           <p className="al-eyebrow">{'// TERMINAL MU/TH/UR'}</p>
           <h2 className="al-h2">Appelle la Compagnie.</h2>
           <p className="al-lead">
-            Tu as six messages pour la convaincre d’envoyer de l’aide. Parfois
-            tu choisis, parfois c’est toi qui écris. Chaque réponse change sa
+            Tu as six messages pour la convaincre d’envoyer de l’aide. Tu
+            réponds en cliquant sur une phrase, et pour les deux derniers
+            messages tu peux aussi écrire le tien. Chaque réponse change sa
             crédibilité, son intérêt et son irritation. Si elle accepte, tu
             gagnes. Sinon, personne ne viendra.
           </p>

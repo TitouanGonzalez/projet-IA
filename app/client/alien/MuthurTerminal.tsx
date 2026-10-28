@@ -151,6 +151,7 @@ export default function MuthurTerminal({
           ? 'write'
           : 'choice';
   const [draft, setDraft] = useState('');
+  const [writing, setWriting] = useState(false);
   const field = useRef<HTMLTextAreaElement>(null);
 
   const beepFn = useRef(beep);
@@ -163,6 +164,7 @@ export default function MuthurTerminal({
   const begin = () => {
     const first = openingEntries();
     setGame(start());
+    setWriting(false);
     setEntries(first);
     setShown(calm.current ? first.length : 0);
     setStarted(true);
@@ -187,8 +189,8 @@ export default function MuthurTerminal({
       );
   };
   // Envoie le message écrit par le joueur : la Compagnie le lit et réagit.
-  const send = () => {
-    const text = draft.trim().slice(0, MAX_TEXT);
+  const sendText = (raw: string) => {
+    const text = raw.trim().slice(0, MAX_TEXT);
     if (!text || game.ending || !nodes[game.node]?.free) return;
     const { state: after, notes } = submit(game, text);
     const added = [
@@ -198,6 +200,7 @@ export default function MuthurTerminal({
     ];
     sfx('click');
     setDraft('');
+    setWriting(false);
     setGame(after);
     setEntries((old) => [...old, ...added]);
     if (calm.current) setShown((s) => s + added.length);
@@ -207,6 +210,7 @@ export default function MuthurTerminal({
         400,
       );
   };
+  const send = () => sendText(draft);
   const skip = () => setShown(entries.length);
 
   // Toujours montrer la fin du journal.
@@ -228,7 +232,7 @@ export default function MuthurTerminal({
     if (!root) return;
     const active = document.activeElement;
     if (active && active !== document.body && !root.contains(active)) return;
-    if (phase === 'write') {
+    if (phase === 'write' && writing) {
       field.current?.focus();
       return;
     }
@@ -237,7 +241,7 @@ export default function MuthurTerminal({
         '.al-term-choices button, .al-term-replay',
       )
       ?.focus();
-  }, [phase]);
+  }, [phase, writing]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (phase === 'typing' && (e.key === ' ' || e.key === 'Enter')) {
@@ -248,6 +252,16 @@ export default function MuthurTerminal({
       if (nodes[game.node]?.choices[i]) {
         e.preventDefault();
         pick(i);
+      }
+    } else if (phase === 'write' && !writing && /^[1-9]$/.test(e.key)) {
+      const list = nodes[game.node].free?.suggestions ?? [];
+      const i = Number(e.key) - 1;
+      if (list[i]) {
+        e.preventDefault();
+        sendText(list[i]);
+      } else if (i === list.length) {
+        e.preventDefault();
+        setWriting(true);
       }
     }
   };
@@ -325,7 +339,29 @@ export default function MuthurTerminal({
             ))}
           </ol>
         )}
-        {phase === 'write' && (
+        {phase === 'write' && !writing && (
+          <ol className="al-term-choices" aria-label="Phrases proposées">
+            {(nodes[game.node].free?.suggestions ?? []).map((t, i) => (
+              <li key={t}>
+                <button type="button" onClick={() => sendText(t)}>
+                  <b>{i + 1}</b>
+                  <span>{t}</span>
+                </button>
+              </li>
+            ))}
+            <li>
+              <button
+                type="button"
+                className="al-term-own"
+                onClick={() => setWriting(true)}
+              >
+                <b>{(nodes[game.node].free?.suggestions.length ?? 0) + 1}</b>
+                <span>Écrire mon propre message.</span>
+              </button>
+            </li>
+          </ol>
+        )}
+        {phase === 'write' && writing && (
           <form
             className="al-term-write"
             onSubmit={(e) => {
@@ -353,6 +389,13 @@ export default function MuthurTerminal({
               <span aria-hidden="true">
                 {draft.length}/{MAX_TEXT}
               </span>
+              <button
+                type="button"
+                className="al-term-skip"
+                onClick={() => setWriting(false)}
+              >
+                REVENIR AUX PHRASES PROPOSÉES
+              </button>
               <button type="submit" className="al-btn" disabled={!draft.trim()}>
                 ENVOYER
               </button>
@@ -370,7 +413,7 @@ export default function MuthurTerminal({
         )}
       </div>
       <p className="al-term-hint" aria-hidden="true">
-        {phase === 'write'
+        {phase === 'write' && writing
           ? 'Écris ta réponse, puis Ctrl + Entrée ou le bouton pour l’envoyer.'
           : 'Touches 1 à 4 pour répondre. Espace pour accélérer le texte.'}
       </p>

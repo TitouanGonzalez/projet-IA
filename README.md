@@ -1,6 +1,6 @@
 # Nostromo, un site interactif sur l'équipage
 
-Un petit site de fan, dans l'univers de la saga Alien, réalisé pour un exercice de design interactif : un écran d'entrée de terminal, un œuf en fil de fer 3D qui suit la souris, six dossiers de personnages en cartes inclinées en 3D, un détecteur de mouvement à la souris, un jeu à choix et à texte libre dans le terminal de l’ordinateur de bord, des petits sons d'interaction discrets et une musique d'ambiance rétro-futuriste.
+Un petit site de fan, dans l'univers de la saga Alien, réalisé pour un exercice de design interactif : un écran d'entrée de terminal, un œuf en fil de fer 3D qui suit la souris, six dossiers de personnages en cartes inclinées en 3D, un détecteur de mouvement à la souris, un jeu à choix dans le terminal de l’ordinateur de bord (avec des phrases toutes faites, ou un texte libre si on préfère), des petits sons d'interaction discrets et une musique d'ambiance rétro-futuriste.
 
 ![Accueil de Nostromo](docs/images/nostromo-accueil.png)
 

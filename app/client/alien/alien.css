@@ -1298,3 +1298,16 @@
   color: #d4665b;
   text-shadow: 0 0 14px rgba(212, 102, 91, 0.6);
 }
+
+/* Option « écrire mon propre message » : bordure en pointillés pour la distinguer des phrases. */
+.al-root .al-term-choices button.al-term-own {
+  border-style: dashed;
+  color: var(--dim);
+}
+.al-root .al-term-choices button.al-term-own:hover,
+.al-root .al-term-choices button.al-term-own:focus-visible {
+  color: var(--ink);
+}
+.al-term-write-row {
+  flex-wrap: wrap;
+}

@@ -10,7 +10,7 @@ Page de fan, non officielle. Alien et ses personnages appartiennent à 20th Cent
 - Une scène d’accueil avec un œuf en fil de fer 3D, dessiné sur un canvas 2D, qui suit la souris.
 - Six cartes de personnages qui s’inclinent en 3D selon la souris, et un dossier qui s’ouvre avec une mini-biographie et des jauges fictives.
 - Un détecteur de mouvement : un radar en éventail avec balayage, des contacts cachés qui s’approchent de la sonde, un bip qui accélère quand on s’approche et une impulsion qui révèle tout. Rester trop longtemps collé à un contact fait perdre la partie.
-- Un jeu dans le terminal MU/TH/UR : six messages pour convaincre la Compagnie d’envoyer de l’aide. Parfois on choisit, parfois on écrit soi-même son message, que la Compagnie analyse. Gagné si elle accepte, perdu sinon, avec six fins différentes.
+- Un jeu dans le terminal MU/TH/UR : six messages pour convaincre la Compagnie d’envoyer de l’aide. On répond en cliquant sur des phrases, et pour deux messages on peut aussi écrire le sien, que la Compagnie analyse. Trois phrases toutes faites sont proposées à chaque fois, pour ne jamais rester bloqué. Gagné si elle accepte, perdu sinon, avec six fins différentes.
 - De petits sons d’interaction discrets au survol et au clic.
 - Une musique d’ambiance rétro-futuriste synthétisée dans le navigateur, qu’on peut couper avec les sons.
 
