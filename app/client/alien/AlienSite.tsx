@@ -22,11 +22,11 @@ const photos = import.meta.glob('./images/*.{jpg,jpeg,png,webp}', {
 }) as Record<string, string>;
 // Cadrage des portraits (object-position), pour garder le visage dans la carte.
 const focus: Record<string, string> = {
-  ripley: '50% 18%',
-  xenomorphe: '40% 45%',
-  ash: '58% 30%',
-  bishop: '50% 28%',
-  jonesy: '72% 55%',
+  ripley: '50% 50%',
+  xenomorphe: '50% 50%',
+  ash: '50% 50%',
+  bishop: '50% 50%',
+  jonesy: '50% 50%',
   mother: '50% 50%',
 };
 function photoFor(id: string): string | undefined {
