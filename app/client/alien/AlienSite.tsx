@@ -9,6 +9,8 @@ import {
 } from 'react';
 import { bootLines, dossiers, type Dossier } from './data.js';
 import { createSoundtrack, type SoundKind, type Soundtrack } from './audio.js';
+import MotionTracker from './MotionTracker.js';
+import MuthurTerminal from './MuthurTerminal.js';
 import Ovomorph from './Ovomorph.js';
 
 type Sfx = (kind: SoundKind) => void;
@@ -394,6 +396,8 @@ export default function AlienSite() {
     const ids: Record<string, string> = {
       accueil: 'ACCUEIL',
       dossiers: 'DOSSIERS',
+      detecteur: 'DÉTECTEUR',
+      terminal: 'TERMINAL',
     };
     const io = new IntersectionObserver(
       (entries) => {
@@ -423,6 +427,7 @@ export default function AlienSite() {
     setPhase('site');
   };
   const sfx = useCallback<Sfx>((kind) => sound.current?.play(kind), []);
+  const beep = useCallback((freq: number) => sound.current?.beep(freq), []);
   const toggleSound = () => {
     const s = sound.current;
     if (!s) return;
@@ -504,6 +509,12 @@ export default function AlienSite() {
           <button type="button" onClick={() => go('dossiers')} {...hover}>
             :DOSSIERS
           </button>
+          <button type="button" onClick={() => go('detecteur')} {...hover}>
+            :DÉTECTEUR
+          </button>
+          <button type="button" onClick={() => go('terminal')} {...hover}>
+            :TERMINAL
+          </button>
           <button type="button" onClick={() => go('apropos')} {...hover}>
             :À PROPOS
           </button>
@@ -568,6 +579,31 @@ export default function AlienSite() {
               <DossierCard key={d.id} d={d} onOpen={openDossier} sfx={sfx} />
             ))}
           </ul>
+        </section>
+
+        <section id="detecteur" className="al-section al-trk-section">
+          <div>
+            <p className="al-eyebrow">{'// DÉTECTEUR DE MOUVEMENT'}</p>
+            <h2 className="al-h2">Rien ne bouge. Vraiment ?</h2>
+            <p className="al-lead">
+              Déplace la sonde avec ta souris, ou avec les flèches du clavier.
+              Plus tu t’approches d’un contact caché, plus le bip s’accélère et
+              monte. Un clic, ou la barre d’espace, lance une impulsion qui
+              révèle tout un instant.
+            </p>
+          </div>
+          <MotionTracker beep={beep} onPing={() => sfx('open')} />
+        </section>
+
+        <section id="terminal" className="al-section al-term-section">
+          <p className="al-eyebrow">{'// TERMINAL MU/TH/UR'}</p>
+          <h2 className="al-h2">Appelle la Compagnie.</h2>
+          <p className="al-lead">
+            Tu as cinq messages pour la convaincre d’envoyer de l’aide. Chaque
+            réponse change sa crédibilité, son intérêt et son irritation. Si
+            elle accepte, tu gagnes. Sinon, personne ne viendra.
+          </p>
+          <MuthurTerminal beep={beep} sfx={sfx} />
         </section>
       </main>
 

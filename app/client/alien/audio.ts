@@ -6,6 +6,8 @@ export interface Soundtrack {
   setOn(on: boolean): void;
   // Petit son d'interaction, très discret. Muet quand le son est coupé.
   play(kind: SoundKind): void;
+  // Bip du détecteur de mouvement, à la hauteur demandée (en Hz). Muet quand le son est coupé.
+  beep(freq: number): void;
   stop(): void;
 }
 
@@ -113,6 +115,25 @@ export function createSoundtrack(): Soundtrack | null {
   return {
     get on() {
       return on;
+    },
+    beep(freq: number) {
+      if (!on || ctx.state !== 'running') return;
+      const now = ctx.currentTime;
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      const f = ctx.createBiquadFilter();
+      o.type = 'square';
+      o.frequency.value = freq;
+      f.type = 'lowpass';
+      f.frequency.value = 2400;
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.exponentialRampToValueAtTime(0.035, now + 0.006);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+      o.connect(f);
+      f.connect(g);
+      g.connect(master);
+      o.start(now);
+      o.stop(now + 0.09);
     },
     play(kind: SoundKind) {
       if (!on || ctx.state !== 'running') return;
