@@ -249,6 +249,12 @@ export default function MotionTracker({
     let dir = 1;
     let lastBeep = 0;
     const loop = (now: number) => {
+      // Scène invisible (loin dans le couloir) : le jeu est en pause, rien n'est dessiné.
+      if (canvas.closest('.is-away')) {
+        last = now;
+        raf = requestAnimationFrame(loop);
+        return;
+      }
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       const playing = !lost.current;

@@ -1,13 +1,7 @@
 // Journal de bord : phrases de MU/TH/UR qui apparaissent seules, selon la partie du site où
 // la personne se trouve. Logique pure (aucun accès au navigateur), pour pouvoir la tester.
 export type LogSection =
-  | 'accueil'
-  | 'dossiers'
-  | 'plan'
-  | 'detecteur'
-  | 'terminal'
-  | 'collection'
-  | 'apropos';
+  'accueil' | 'dossiers' | 'detecteur' | 'terminal' | 'collection' | 'apropos';
 
 export const AMBIENT_MIN = 22_000;
 export const AMBIENT_MAX = 38_000;
@@ -25,11 +19,6 @@ export const AMBIENT: Record<LogSection, string[]> = {
     'DOSSIERS DE L’ÉQUIPAGE : LECTURE AUTORISÉE.',
     'UN DOSSIER A ÉTÉ MODIFIÉ SANS VOTRE ACCORD. IGNORÉ.',
     'LES CONSTANTES DE L’ÉQUIPAGE RESTENT STABLES.',
-  ],
-  plan: [
-    'PLAN DU VAISSEAU : SIX COMPARTIMENTS ACCESSIBLES.',
-    'PORTE DE LA CALE : VERROUILLAGE INCOMPLET.',
-    'PRESSION STABLE SUR TOUS LES PONTS.',
   ],
   detecteur: [
     'ÉCHO FAIBLE SUR LE PONT C. PROBABLEMENT UNE PANNE.',
@@ -59,7 +48,6 @@ export const EVENTS = {
   trackerLost: 'LIAISON PERDUE AVEC LE DÉTECTEUR. CONTACT À PROXIMITÉ.',
   legendary: 'ALERTE : SIGNATURE RARE DÉTECTÉE DANS LA COLLECTION.',
   duplicate: 'DOUBLON ENREGISTRÉ. LE VAISSEAU GARDE TOUT.',
-  explored: 'TOUS LES COMPARTIMENTS ONT ÉTÉ VISITÉS. BON TRAVAIL.',
   won: 'LA COMPAGNIE A RÉPONDU. DE L’AIDE EST EN ROUTE.',
   lost: 'LA COMPAGNIE NE RÉPOND PLUS.',
 } as const;

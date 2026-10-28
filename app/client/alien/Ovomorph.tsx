@@ -102,7 +102,7 @@ export default function Ovomorph({
         : null;
     watcher?.observe(canvas);
     const loop = (now: number) => {
-      if (!visible) {
+      if (!visible || canvas.closest('.is-away')) {
         last = now;
         raf = requestAnimationFrame(loop);
         return;

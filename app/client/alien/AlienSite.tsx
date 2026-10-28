@@ -15,15 +15,7 @@ import MuthurTerminal from './MuthurTerminal.js';
 import Ovomorph from './Ovomorph.js';
 import CrewScan from './CrewScan.js';
 import ScrollTunnel from './ScrollTunnel.js';
-import ShipMap from './ShipMap.js';
 import { BoardLog, useBoardLog } from './BoardLog.js';
-import {
-  exploration,
-  visit,
-  type Room,
-  type RoomId,
-  type RoomTarget,
-} from '../../shared/ship.js';
 import type { LogSection } from '../../shared/boardlog.js';
 import { useScenes } from './useScenes.js';
 import { Icon, photoFor, focus, reducedMotion, useTilt } from './shared.js';
@@ -34,7 +26,6 @@ type Sfx = (kind: SoundKind) => void;
 const SECTION_NAMES: Record<string, string> = {
   accueil: 'ACCUEIL',
   dossiers: 'DOSSIERS',
-  vaisseau: 'PLAN',
   detecteur: 'DÉTECTEUR',
   terminal: 'TERMINAL',
   collection: 'COLLECTION',
@@ -284,12 +275,10 @@ export default function AlienSite() {
   const sound = useRef<Soundtrack | null>(null);
   const trigger = useRef<HTMLElement | null>(null);
   const coll = useCollection();
-  const [visited, setVisited] = useState<RoomId[]>([]);
   const beepLine = useCallback(() => sound.current?.beep(330), []);
   const logSection = ({
     ACCUEIL: 'accueil',
     DOSSIERS: 'dossiers',
-    PLAN: 'plan',
     DÉTECTEUR: 'detecteur',
     TERMINAL: 'terminal',
     COLLECTION: 'collection',
@@ -373,15 +362,6 @@ export default function AlienSite() {
     },
     [logEvent],
   );
-  const visitRoom = (room: Room) => {
-    sfx('open');
-    const next = visit(visited, room.id);
-    setVisited(next);
-    logSay(room.log);
-    if (!visited.includes(room.id) && exploration(next).complete)
-      window.setTimeout(() => logEvent('explored'), 1200);
-  };
-  const goTarget = (target: RoomTarget) => go(target);
   const toggleSound = () => {
     const s = sound.current;
     if (!s) return;
@@ -486,9 +466,6 @@ export default function AlienSite() {
           <button type="button" onClick={() => go('dossiers')} {...hover}>
             :DOSSIERS
           </button>
-          <button type="button" onClick={() => go('vaisseau')} {...hover}>
-            :PLAN
-          </button>
           <button type="button" onClick={() => go('detecteur')} {...hover}>
             :DÉTECTEUR
           </button>
@@ -567,21 +544,6 @@ export default function AlienSite() {
               <DossierCard key={d.id} d={d} onOpen={openDossier} sfx={sfx} />
             ))}
           </ul>
-        </section>
-
-        <section
-          id="vaisseau"
-          className="al-section al-ship-section al-scene"
-          data-scene
-        >
-          <p className="al-eyebrow">{'// PLAN DU NOSTROMO'}</p>
-          <h2 className="al-h2">Visite le vaisseau.</h2>
-          <p className="al-lead">
-            Six compartiments, six petits récits. Quatre d’entre eux ouvrent une
-            partie du site : le pont mène au terminal, l’infirmerie aux
-            dossiers, la cale au détecteur et le sas aux œufs.
-          </p>
-          <ShipMap visited={visited} onVisit={visitRoom} onGo={goTarget} />
         </section>
 
         <section

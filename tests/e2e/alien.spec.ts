@@ -717,62 +717,6 @@ test('démarrage : le faux scan de l’équipage se termine et signale un inconn
   await expect(page.getByRole('button', { name: 'ENTER' })).toBeEnabled();
 });
 
-test('plan : une salle ouvre son récit, son bouton et le journal', async ({
-  page,
-}) => {
-  await enterSite(page);
-  await page.getByRole('button', { name: ':PLAN' }).click();
-  const ship = page.locator('.al-ship');
-  await expect(ship).toHaveAttribute('data-explored', '0');
-  await page.getByRole('button', { name: 'LA CALE', exact: true }).click();
-  await expect(ship).toHaveAttribute('data-room', 'cale');
-  await expect(ship).toHaveAttribute('data-explored', '1');
-  await expect(page.locator('.al-ship-panel')).toContainText('conteneurs');
-  await expect(
-    page.getByRole('button', { name: 'LANCER LE DÉTECTEUR' }),
-  ).toBeVisible();
-  await expect(page.locator('.al-log-line').last()).toContainText('PONT C');
-  await expect(page.locator('.al-ship-count')).toContainText('1/6');
-});
-
-test('plan : le bouton d’une salle emmène vers la bonne partie du site', async ({
-  page,
-}) => {
-  await enterSite(page);
-  await page.getByRole('button', { name: ':PLAN' }).click();
-  await page.getByRole('button', { name: 'LE PONT', exact: true }).click();
-  await page.getByRole('button', { name: 'APPELER LA COMPAGNIE' }).click();
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () => document.getElementById('terminal')!.getBoundingClientRect().top,
-      ),
-    )
-    .toBeLessThan(300);
-});
-
-test('plan : deux salles sans bouton, et toutes les visiter est signalé', async ({
-  page,
-}) => {
-  await enterSite(page);
-  await page.getByRole('button', { name: ':PLAN' }).click();
-  await page.getByRole('button', { name: 'LA SALLE DES MACHINES' }).click();
-  await expect(page.locator('.al-ship-panel .al-btn')).toHaveCount(0);
-  for (const name of [
-    'LE PONT',
-    'L’INFIRMERIE',
-    'LA CALE',
-    'LE SAS DE QUARANTAINE',
-    'LA NAVETTE DE SECOURS',
-  ])
-    await page.getByRole('button', { name, exact: true }).click();
-  await expect(page.locator('.al-ship')).toHaveAttribute('data-explored', '6');
-  await expect(page.locator('.al-ship-count')).toContainText('TOUT EST VU');
-  await expect(
-    page.locator('.al-log-line', { hasText: 'TOUS LES COMPARTIMENTS' }),
-  ).toBeVisible({ timeout: 5000 });
-});
-
 test('journal : message à l’entrée, phrases spontanées, puis coupure à la demande', async ({
   page,
 }) => {
@@ -802,23 +746,23 @@ test('mobile : menu burger, navigation et fermeture, curseur caché au toucher',
   const burger = page.getByRole('button', { name: 'MENU' });
   await expect(burger).toBeVisible();
   await expect(burger).toHaveAttribute('aria-expanded', 'false');
-  await expect(page.getByRole('button', { name: ':PLAN' })).toBeHidden();
+  await expect(page.getByRole('button', { name: ':DÉTECTEUR' })).toBeHidden();
   await burger.click();
   await expect(page.getByRole('button', { name: 'FERMER' })).toHaveAttribute(
     'aria-expanded',
     'true',
   );
-  await expect(page.getByRole('button', { name: ':PLAN' })).toBeVisible();
+  await expect(page.getByRole('button', { name: ':DÉTECTEUR' })).toBeVisible();
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('button', { name: ':PLAN' })).toBeHidden();
+  await expect(page.getByRole('button', { name: ':DÉTECTEUR' })).toBeHidden();
   await burger.click();
-  await page.getByRole('button', { name: ':PLAN' }).click();
+  await page.getByRole('button', { name: ':DÉTECTEUR' }).click();
   await expect(page.getByRole('button', { name: 'MENU' })).toBeVisible();
-  await expect(page.getByRole('button', { name: ':PLAN' })).toBeHidden();
+  await expect(page.getByRole('button', { name: ':DÉTECTEUR' })).toBeHidden();
   await expect
     .poll(() =>
       page.evaluate(
-        () => document.getElementById('vaisseau')!.getBoundingClientRect().top,
+        () => document.getElementById('detecteur')!.getBoundingClientRect().top,
       ),
     )
     .toBeLessThan(200);
@@ -853,10 +797,10 @@ test('défilement : le fond avance, l’œuf s’efface, les titres se révèlen
   await expect
     .poll(async () => Number(await egg.evaluate((el) => el.style.opacity)))
     .toBeLessThan(0.3);
-  await page.getByRole('button', { name: ':PLAN' }).click();
-  await expect(page.locator('#vaisseau .al-h2')).toHaveClass(/is-in/);
+  await page.getByRole('button', { name: ':DÉTECTEUR' }).click();
+  await expect(page.locator('#detecteur .al-h2')).toHaveClass(/is-in/);
   await expect(
-    page.getByRole('heading', { name: 'Visite le vaisseau.' }),
+    page.getByRole('heading', { name: 'Rien ne bouge. Vraiment ?' }),
   ).toBeVisible();
 });
 

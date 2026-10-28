@@ -770,19 +770,19 @@
   overflow: hidden;
   pointer-events: none;
   opacity: 0.6;
-  mix-blend-mode: screen;
+  /* Pas de mélange « screen » : il obligeait à recomposer toute la page à chaque image. */
   background: linear-gradient(
     to top,
     rgba(79, 138, 57, 0.2) 0%,
     transparent 38%
   );
 }
+/* Pas de filtre flou ici : il rendait le défilement saccadé. Les dégradés radiaux sont déjà doux. */
 .al-fog::before,
 .al-fog::after {
   content: '';
   position: absolute;
   inset: 0;
-  filter: blur(48px);
   will-change: transform;
 }
 .al-fog::before {
@@ -1916,104 +1916,6 @@
   }
 }
 
-/* Plan du Nostromo */
-.al-ship {
-  display: grid;
-  gap: 14px;
-  max-width: 940px;
-  margin-top: 32px;
-}
-.al-ship-svg {
-  width: 100%;
-  height: auto;
-  color: var(--ink);
-  border: 1px solid var(--line);
-  background:
-    linear-gradient(rgba(79, 138, 57, 0.08) 1px, transparent 1px) 0 0 / 100%
-      28px,
-    #0a0d09;
-  filter: drop-shadow(0 0 6px rgba(79, 138, 57, 0.4));
-}
-.al-ship-room {
-  cursor: pointer;
-  color: var(--dim);
-}
-.al-ship-room rect {
-  fill: rgba(79, 138, 57, 0.05);
-  transition:
-    fill 0.2s,
-    stroke 0.2s;
-}
-.al-ship-room:hover rect {
-  fill: rgba(79, 138, 57, 0.22);
-  stroke: var(--accent-lit);
-}
-.al-ship-room.is-seen {
-  color: var(--accent-lit);
-}
-.al-ship-room.is-current rect {
-  fill: rgba(79, 138, 57, 0.35);
-  stroke: var(--accent-lit);
-  stroke-width: 2.4;
-  filter: drop-shadow(0 0 8px var(--accent-lit));
-}
-.al-ship-label {
-  fill: currentColor;
-  stroke: none;
-  font-family: var(--mono);
-  font-size: 16px;
-  letter-spacing: 0.1em;
-}
-.al-ship-sweep {
-  stroke: var(--accent-lit);
-  stroke-width: 1.2;
-  opacity: 0.55;
-  animation: al-ship-sweep 7s ease-in-out infinite alternate;
-}
-@keyframes al-ship-sweep {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(740px);
-  }
-}
-.al-ship-rooms {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.al-ship-rooms button[data-seen='true']::after {
-  content: ' ✓';
-}
-.al-root .al-ship-count {
-  margin: 0;
-  font-size: 12px;
-  letter-spacing: 0.1em;
-  color: var(--accent-lit);
-}
-.al-ship-panel {
-  min-height: 190px;
-  padding: 18px;
-  border: 1px solid var(--line);
-  background: rgba(8, 12, 7, 0.6);
-}
-.al-ship-panel .al-btn {
-  margin-top: 14px;
-}
-.al-root .al-ship-deck {
-  margin: 0;
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  color: var(--dim);
-}
-.al-root .al-ship-story {
-  margin: 8px 0 0;
-  max-width: 62ch;
-  font-size: 14px;
-  color: var(--dim);
-}
-
 /* Journal de bord de MU/TH/UR */
 .al-log {
   position: fixed;
@@ -2266,4 +2168,12 @@
 .al-spacer {
   width: 1px;
   pointer-events: none;
+}
+
+/* Scène invisible (loin dans le couloir) : ses animations CSS sont en pause. */
+.al-scene.is-away,
+.al-scene.is-away *,
+.al-scene.is-away *::before,
+.al-scene.is-away *::after {
+  animation-play-state: paused !important;
 }

@@ -54,6 +54,8 @@ export function useScenes(enabled: boolean, onActive: (id: string) => void) {
             : `translateY(${ty}px) scale(${p.scale.toFixed(4)})`;
         el.style.opacity = p.opacity >= 1 ? '' : p.opacity.toFixed(3);
         el.style.pointerEvents = p.interactive ? '' : 'none';
+        // Scène invisible : on met en pause ses animations et ses canvas.
+        el.classList.toggle('is-away', p.opacity < 0.02);
         if (!revealed[i] && p.entering >= 0.35) {
           revealed[i] = true;
           headings[i].forEach((h) => h.classList.add('is-in'));
@@ -153,6 +155,7 @@ export function useScenes(enabled: boolean, onActive: (id: string) => void) {
         s.style.opacity = '';
         s.style.transformOrigin = '';
         s.style.pointerEvents = '';
+        s.classList.remove('is-away');
         delete s.dataset.start;
         delete s.dataset.read;
       });
