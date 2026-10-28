@@ -2244,3 +2244,8 @@
     opacity: 1;
   }
 }
+
+/* Entre deux sections : un espace vide où l'on ne voit que le couloir défiler. */
+.al-depth main > .al-section {
+  margin-top: 60vh;
+}

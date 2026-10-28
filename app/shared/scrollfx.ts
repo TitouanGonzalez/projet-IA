@@ -79,33 +79,54 @@ export function ringAlpha(distance: number, rings: number): number {
 
 // Position de la caméra : avance avec le défilement, et dérive doucement même à l'arrêt.
 export function cameraAt(scrollY: number, seconds: number, still: boolean) {
-  return scrollY * 0.9 + (still ? 0 : seconds * 24);
+  return scrollY * 1.4 + (still ? 0 : seconds * 24);
 }
 
 export interface DepthPose {
   scale: number;
   opacity: number;
+  // Décalage vertical en pixels (négatif : la section est retenue en haut de l'écran).
+  shiftY: number;
   // Point d'origine de l'échelle : le centre de l'écran, vu depuis le haut de la section.
   originY: number;
   // Vrai quand la section est à sa place normale (aucune transformation à appliquer).
   atRest: boolean;
+  // Vrai quand on peut cliquer dedans (elle est arrivée, et pas encore en train de s'effacer).
+  interactive: boolean;
 }
+
+// Espace vide entre deux sections, en part de la hauteur d'écran : on ne voit que le couloir.
+export const GATE = 0.6;
 
 const smooth = (t: number): number => t * t * (3 - 2 * t);
 
-// Une section qui arrive « du fond du couloir » : tout en bas de l'écran elle est petite et
-// transparente, elle grandit jusqu'à sa taille normale en montant, et quand elle sort par le haut
-// elle grossit un peu et s'efface, comme si on la traversait. top et bottom sont les bords de la
-// section par rapport au haut de l'écran, vh la hauteur de l'écran.
+// On avance dans le couloir, la section ne glisse pas vers le haut : elle reste en place en haut de
+// l'écran et surgit du fond (petite et transparente, elle grandit jusqu'à sa taille normale), puis
+// elle est relâchée et défile normalement. En sortant par le haut elle fonce vers nous : elle
+// grossit et s'efface. top et bottom sont les bords de la section par rapport au haut de l'écran
+// (sans tenir compte de la transformation), vh la hauteur de l'écran.
 export function depthPose(top: number, bottom: number, vh: number): DepthPose {
-  if (!(vh > 0)) return { scale: 1, opacity: 1, originY: 0, atRest: true };
-  const entering = smooth(clamp01((vh - top) / (vh * 0.55)));
+  if (!(vh > 0))
+    return {
+      scale: 1,
+      opacity: 1,
+      shiftY: 0,
+      originY: 0,
+      atRest: true,
+      interactive: true,
+    };
+  const entering = smooth(clamp01((vh - top) / (vh * 0.7)));
   const leaving = clamp01((vh * 0.4 - bottom) / (vh * 0.4));
-  const atRest = entering >= 1 && leaving <= 0;
+  // Tant que le haut de la section n'a pas atteint le haut de l'écran, elle y reste retenue.
+  const pinned = top > 0 && top < vh;
+  const shiftY = pinned ? -top : 0;
+  const renderedTop = pinned ? 0 : top;
   return {
-    scale: (0.78 + 0.22 * entering) * (1 + 0.1 * leaving),
-    opacity: entering * (1 - 0.85 * leaving),
-    originY: vh / 2 - top,
-    atRest,
+    scale: (0.35 + 0.65 * entering) * (1 + 0.35 * leaving),
+    opacity: entering * (1 - leaving),
+    shiftY,
+    originY: vh / 2 - renderedTop,
+    atRest: top <= 0 && entering >= 1 && leaving <= 0,
+    interactive: entering >= 1 && leaving < 0.5,
   };
 }

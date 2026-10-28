@@ -121,11 +121,13 @@ test('caméra : avance avec le défilement, dérive sauf si les mouvements sont 
   assert.equal(cameraAt(0, 10, true), 0);
 });
 
-test('profondeur : une section en bas de l’écran est petite et transparente', () => {
+test('profondeur : une section en bas de l’écran est petite, transparente et pas cliquable', () => {
   const p = depthPose(900, 1900, 900);
   assert.equal(p.atRest, false);
   assert.equal(p.opacity, 0);
-  assert.equal(p.scale, 0.78);
+  assert.equal(p.scale, 0.35);
+  assert.equal(p.shiftY, 0);
+  assert.equal(p.interactive, false);
 });
 
 test('profondeur : à sa place, aucune transformation', () => {
@@ -133,12 +135,30 @@ test('profondeur : à sa place, aucune transformation', () => {
   assert.equal(p.atRest, true);
   assert.equal(p.scale, 1);
   assert.equal(p.opacity, 1);
+  assert.equal(p.shiftY, 0);
+  assert.equal(p.interactive, true);
 });
 
-test('profondeur : grandit et s’opacifie en montant, sans retour en arrière', () => {
+test('profondeur : en arrivant, la section reste retenue en haut au lieu de monter', () => {
+  const mid = depthPose(450, 1450, 900);
+  assert.equal(mid.shiftY, -450);
+  assert.ok(mid.opacity > 0 && mid.opacity < 1);
+  assert.ok(mid.scale > 0.35 && mid.scale < 1);
+  assert.equal(mid.interactive, false);
+  assert.equal(mid.originY, 450);
+  // Arrivée complète : taille normale, toujours retenue, cliquable, pas encore « posée ».
+  const docked = depthPose(100, 1100, 900);
+  assert.equal(docked.scale, 1);
+  assert.equal(docked.opacity, 1);
+  assert.equal(docked.shiftY, -100);
+  assert.equal(docked.interactive, true);
+  assert.equal(docked.atRest, false);
+});
+
+test('profondeur : grandit et s’opacifie en avançant, sans retour en arrière', () => {
   let lastScale = 0;
   let lastOpacity = -1;
-  for (let top = 900; top >= 300; top -= 50) {
+  for (let top = 899; top >= 0; top -= 50) {
     const p = depthPose(top, top + 1000, 900);
     assert.ok(p.scale >= lastScale && p.opacity >= lastOpacity, String(top));
     assert.ok(p.opacity >= 0 && p.opacity <= 1);
@@ -147,19 +167,23 @@ test('profondeur : grandit et s’opacifie en montant, sans retour en arrière',
   }
 });
 
-test('profondeur : en sortant par le haut, elle grossit et s’efface', () => {
+test('profondeur : en sortant par le haut, elle fonce vers nous et s’efface', () => {
   const p = depthPose(-1500, -100, 900);
   assert.equal(p.atRest, false);
-  assert.ok(p.scale > 1 && p.scale <= 1.1 + 1e-9);
+  assert.ok(p.scale > 1 && p.scale <= 1.35 + 1e-9);
   assert.ok(p.opacity < 0.2);
+  assert.equal(p.interactive, false);
+  assert.equal(p.shiftY, 0);
 });
 
 test('profondeur : l’origine est le centre de l’écran, et un écran vide ne casse rien', () => {
-  assert.equal(depthPose(100, 900, 800).originY, 300);
+  assert.equal(depthPose(-100, 900, 800).originY, 500);
   assert.deepEqual(depthPose(0, 0, 0), {
     scale: 1,
     opacity: 1,
+    shiftY: 0,
     originY: 0,
     atRest: true,
+    interactive: true,
   });
 });

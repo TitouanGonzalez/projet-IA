@@ -17,6 +17,35 @@ async function settle(page: import('@playwright/test').Page, selector: string) {
   }
 }
 
+// Les sections arrivent du fond du couloir : tant qu'elles n'ont pas fini d'arriver, elles ne sont
+// ni à leur taille ni cliquables. On saute à la section et on attend qu'elle soit posée.
+async function snap(page: import('@playwright/test').Page, id: string) {
+  await page.evaluate((i) => {
+    let top = 0;
+    for (
+      let n: HTMLElement | null = document.getElementById(i);
+      n;
+      n = n.offsetParent as HTMLElement | null
+    )
+      top += n.offsetTop;
+    window.scrollTo({ top, behavior: 'instant' });
+  }, id);
+}
+async function jump(page: import('@playwright/test').Page, id: string) {
+  await snap(page, id);
+  await atRest(page, id);
+}
+async function atRest(page: import('@playwright/test').Page, id: string) {
+  await expect
+    .poll(() =>
+      page.evaluate((i) => {
+        const el = document.getElementById(i)!;
+        return el.style.transform === '' && el.style.pointerEvents === '';
+      }, id),
+    )
+    .toBe(true);
+}
+
 const title = 'Nostromo, dossiers de l’équipage';
 
 test('intro : démarrage du terminal, puis entrée sur le site', async ({
@@ -57,6 +86,7 @@ test('cartes : inclinaison 3D, dossier ouvert avec jauges, retour du focus', asy
   await page.goto('/');
   await page.getByRole('button', { name: 'ENTER' }).click();
   await page.getByRole('button', { name: 'DÉCOUVRIR' }).click();
+  await atRest(page, 'dossiers');
   const card = page.locator('.al-card').first();
   await card.scrollIntoViewIfNeeded();
   // Le défilement est doux : on attend qu'il soit fini avant de viser la carte.
@@ -64,15 +94,11 @@ test('cartes : inclinaison 3D, dossier ouvert avec jauges, retour du focus', asy
   await expect
     .poll(
       async () => {
+        await snap(page, 'dossiers');
+        await atRest(page, 'dossiers');
         const box = (await card.boundingBox())!;
-        await card.hover({
-          position: { x: box.width - 40, y: 40 },
-          timeout: 8000,
-        });
-        await card.hover({
-          position: { x: box.width - 10, y: 10 },
-          timeout: 8000,
-        });
+        await page.mouse.move(box.x + box.width - 40, box.y + 40);
+        await page.mouse.move(box.x + box.width - 10, box.y + 10, { steps: 4 });
         return card.getAttribute('data-tilt');
       },
       { timeout: 30000, intervals: [250] },
@@ -97,6 +123,7 @@ test('cartes : inclinaison 3D, dossier ouvert avec jauges, retour du focus', asy
 test('chaque dossier s’ouvre avec son nom et son statut', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'ENTER' }).click();
+  await jump(page, 'dossiers');
   const names = [
     'Ellen Ripley',
     'Le Xénomorphe',
@@ -159,6 +186,7 @@ test('sons d’interaction : aucune erreur, son allumé puis coupé', async ({
   page.on('pageerror', (e) => errors.push(String(e)));
   await page.goto('/');
   await page.getByRole('button', { name: 'ENTER' }).click();
+  await jump(page, 'dossiers');
   const card = page.locator('.al-card').first();
   await card.scrollIntoViewIfNeeded();
   await card.hover();
@@ -166,6 +194,7 @@ test('sons d’interaction : aucune erreur, son allumé puis coupé', async ({
   await page.keyboard.press('Escape');
   const sound = page.getByRole('button', { name: /^SOUND:/ });
   if (await sound.isEnabled()) await sound.click();
+  await jump(page, 'dossiers');
   await card.hover();
   await card.click();
   await page.keyboard.press('Escape');
@@ -829,7 +858,7 @@ test('défilement : les sections arrivent du fond du couloir puis se posent', as
     }, id);
   // Une section encore loin dans le couloir est réduite et transparente.
   const far = await read('terminal');
-  expect(far.transform).toContain('scale(0.78');
+  expect(far.transform).toContain('scale(0.35');
   expect(Number(far.opacity)).toBe(0);
   // Arrivée sur une section : elle est posée, sans aucune transformation.
   await page.getByRole('button', { name: ':TERMINAL' }).click();
@@ -846,4 +875,41 @@ test('défilement : les sections arrivent du fond du couloir puis se posent', as
   // La section d'avant est passée derrière nous : elle s'est effacée.
   const behind = await read('detecteur');
   expect(Number(behind.opacity)).toBeLessThan(1);
+});
+
+test('défilement : en arrivant, la section reste en haut au lieu de monter', async ({
+  page,
+}) => {
+  await enterSite(page);
+  const vh = 1100;
+  // Le haut de #dossiers est à (hauteur de l'accueil + espace). On le fait entrer à mi-course.
+  const start = await page.evaluate(() => {
+    let top = 0;
+    for (
+      let n: HTMLElement | null = document.getElementById('dossiers');
+      n;
+      n = n.offsetParent as HTMLElement | null
+    )
+      top += n.offsetTop;
+    return top;
+  });
+  await page.evaluate((y) => window.scrollTo(0, y), start - vh * 0.6);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => Number(document.getElementById('dossiers')!.style.opacity) > 0,
+      ),
+    )
+    .toBe(true);
+  const mid = await page.evaluate(() => {
+    const el = document.getElementById('dossiers')!;
+    return {
+      top: el.getBoundingClientRect().top,
+      opacity: Number(el.style.opacity),
+    };
+  });
+  // La section est retenue en haut de l'écran, partiellement visible, et ne glisse pas depuis le bas.
+  expect(Math.abs(mid.top)).toBeLessThan(vh * 0.4);
+  expect(mid.opacity).toBeGreaterThan(0);
+  expect(mid.opacity).toBeLessThan(1);
 });
