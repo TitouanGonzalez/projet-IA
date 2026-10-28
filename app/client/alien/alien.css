@@ -2245,7 +2245,25 @@
   }
 }
 
-/* Entre deux sections : un espace vide où l'on ne voit que le couloir défiler. */
-.al-depth main > .al-section {
-  margin-top: 60vh;
+/* Mode scènes : chaque section est fixée à l'écran, et le défilement fait avancer dans le couloir. */
+.al-depth .al-scene {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin: 0;
+  will-change: transform, opacity;
+}
+.al-depth .al-section.al-scene {
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+.al-depth .al-footer.al-scene {
+  border-top: 0;
+  padding-bottom: 60px;
+}
+.al-spacer {
+  width: 1px;
+  pointer-events: none;
 }

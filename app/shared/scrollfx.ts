@@ -82,51 +82,92 @@ export function cameraAt(scrollY: number, seconds: number, still: boolean) {
   return scrollY * 1.4 + (still ? 0 : seconds * 24);
 }
 
-export interface DepthPose {
+// Scènes plein écran : chaque section de la page est une scène fixe à l'écran. Le défilement ne
+// fait plus glisser la page, il fait avancer dans le couloir : la scène courante fonce vers nous et
+// s'efface pendant que la suivante surgit du fond. Une scène plus haute que l'écran se lit sur place
+// (son contenu défile à l'intérieur) avant de passer à la suivante.
+export interface Timeline {
+  starts: number[]; // défilement auquel la scène est entièrement arrivée
+  ends: number[]; // défilement auquel elle commence à repartir
+  reads: number[]; // hauteur de contenu à faire défiler à l'intérieur de la scène
+  shifts: number[]; // décalage pour centrer les scènes plus basses que l'écran
+  gate: number; // longueur de défilement d'un passage entre deux scènes
+  total: number; // hauteur totale à donner à la page
+}
+
+const HOLD_FIRST = 0.35;
+const HOLD = 0.2;
+const HOLD_LAST = 0.1;
+export const GATE = 0.8;
+
+export function buildTimeline(heights: number[], vh: number): Timeline {
+  const gate = GATE * vh;
+  const starts: number[] = [];
+  const ends: number[] = [];
+  const reads: number[] = [];
+  const shifts: number[] = [];
+  let cursor = 0;
+  heights.forEach((h, i) => {
+    const read = Math.max(0, h - vh);
+    const hold =
+      (i === 0 ? HOLD_FIRST : i === heights.length - 1 ? HOLD_LAST : HOLD) * vh;
+    starts.push(cursor);
+    reads.push(read);
+    shifts.push(h < vh ? (vh - h) / 2 : 0);
+    const end = cursor + read + hold;
+    ends.push(end);
+    cursor = end + gate;
+  });
+  const last = ends.length > 0 ? ends[ends.length - 1] : 0;
+  return { starts, ends, reads, shifts, gate, total: last + vh };
+}
+
+export interface ScenePose {
+  offset: number; // défilement interne, en pixels
+  shift: number; // centrage vertical, en pixels
   scale: number;
   opacity: number;
-  // Décalage vertical en pixels (négatif : la section est retenue en haut de l'écran).
-  shiftY: number;
-  // Point d'origine de l'échelle : le centre de l'écran, vu depuis le haut de la section.
-  originY: number;
-  // Vrai quand la section est à sa place normale (aucune transformation à appliquer).
-  atRest: boolean;
-  // Vrai quand on peut cliquer dedans (elle est arrivée, et pas encore en train de s'effacer).
+  entering: number; // 0 loin dans le couloir, 1 arrivée
+  leaving: number; // 0 en place, 1 passée derrière nous
   interactive: boolean;
 }
 
-// Espace vide entre deux sections, en part de la hauteur d'écran : on ne voit que le couloir.
-export const GATE = 0.6;
+const smooth = (n: number): number => n * n * (3 - 2 * n);
 
-const smooth = (t: number): number => t * t * (3 - 2 * t);
-
-// On avance dans le couloir, la section ne glisse pas vers le haut : elle reste en place en haut de
-// l'écran et surgit du fond (petite et transparente, elle grandit jusqu'à sa taille normale), puis
-// elle est relâchée et défile normalement. En sortant par le haut elle fonce vers nous : elle
-// grossit et s'efface. top et bottom sont les bords de la section par rapport au haut de l'écran
-// (sans tenir compte de la transformation), vh la hauteur de l'écran.
-export function depthPose(top: number, bottom: number, vh: number): DepthPose {
-  if (!(vh > 0))
-    return {
-      scale: 1,
-      opacity: 1,
-      shiftY: 0,
-      originY: 0,
-      atRest: true,
-      interactive: true,
-    };
-  const entering = smooth(clamp01((vh - top) / (vh * 0.7)));
-  const leaving = clamp01((vh * 0.4 - bottom) / (vh * 0.4));
-  // Tant que le haut de la section n'a pas atteint le haut de l'écran, elle y reste retenue.
-  const pinned = top > 0 && top < vh;
-  const shiftY = pinned ? -top : 0;
-  const renderedTop = pinned ? 0 : top;
+export function scenePose(i: number, y: number, t: Timeline): ScenePose {
+  const gate = t.gate > 0 ? t.gate : 1;
+  const entering = i === 0 ? 1 : smooth(clamp01((y - t.ends[i - 1]) / gate));
+  const leaving =
+    i === t.ends.length - 1 ? 0 : smooth(clamp01((y - t.ends[i]) / gate));
   return {
-    scale: (0.35 + 0.65 * entering) * (1 + 0.35 * leaving),
+    offset: Math.min(t.reads[i], Math.max(0, y - t.starts[i])),
+    shift: t.shifts[i],
+    scale: (0.35 + 0.65 * entering) * (1 + 0.6 * leaving),
     opacity: entering * (1 - leaving),
-    shiftY,
-    originY: vh / 2 - renderedTop,
-    atRest: top <= 0 && entering >= 1 && leaving <= 0,
-    interactive: entering >= 1 && leaving < 0.5,
+    entering,
+    leaving,
+    interactive: entering >= 0.999 && leaving <= 0.001,
   };
+}
+
+// Scène à afficher comme « courante » (pour les repères et le journal) : la première arrivée à
+// moitié et pas encore à moitié repartie.
+export function activeScene(y: number, t: Timeline): number {
+  for (let i = 0; i < t.starts.length; i++) {
+    const p = scenePose(i, y, t);
+    if (p.entering >= 0.5 && p.leaving < 0.5) return i;
+  }
+  return 0;
+}
+
+// Défilement à atteindre pour amener un élément (à elTop pixels du haut de sa scène) sous
+// l'en-tête, en restant dans la scène.
+export function sceneScrollFor(
+  t: Timeline,
+  i: number,
+  elTop: number,
+  margin = 120,
+): number {
+  const offset = Math.min(t.reads[i], Math.max(0, elTop - margin));
+  return t.starts[i] + offset;
 }

@@ -15,7 +15,7 @@ Page de fan, non officielle. Alien et ses personnages appartiennent à 20th Cent
 - Un faux scan de l’équipage au démarrage, avant le bouton ENTER.
 - Un plan du Nostromo en fil de fer : six salles, chacune avec un petit récit, quatre qui ouvrent une partie du site (pont : terminal, infirmerie : dossiers, cale : détecteur, sas : œufs).
 - Un journal de bord : MU/TH/UR écrit seule des phrases selon la section, et réagit à certaines actions. Il se coupe avec un bouton.
-- Un fond animé : un couloir du vaisseau en fil de fer qui avance quand on défile, s’étire et se penche quand on défile vite, et dérive doucement à l’arrêt. L’œuf de l’accueil s’ouvre en grand, tourne plus vite et s’efface quand on descend. Les sections ne montent pas depuis le bas : elles surgissent du fond du couloir en restant en place, grandissent puis se posent, et les titres se révèlent en entrant à l’écran.
+- Un fond animé : un couloir du vaisseau en fil de fer qui avance quand on défile, s’étire et se penche quand on défile vite, et dérive doucement à l’arrêt. L’œuf de l’accueil s’ouvre en grand, tourne plus vite et s’efface quand on descend. Chaque section est une scène plein écran : le défilement fait avancer dans le couloir, la scène courante fonce vers nous et s’efface pendant que la suivante surgit du fond, et les contenus longs se lisent sur place, et les titres se révèlent en entrant à l’écran.
 - De petits sons d’interaction discrets au survol et au clic.
 - Une musique d’ambiance rétro-futuriste synthétisée dans le navigateur, qu’on peut couper avec les sons.
 

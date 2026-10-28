@@ -25,23 +25,21 @@ import {
   type RoomTarget,
 } from '../../shared/ship.js';
 import type { LogSection } from '../../shared/boardlog.js';
-import { depthPose } from '../../shared/scrollfx.js';
+import { useScenes } from './useScenes.js';
 import { Icon, photoFor, focus, reducedMotion, useTilt } from './shared.js';
 
 type Sfx = (kind: SoundKind) => void;
 
-// Position d'un élément dans la page, sans tenir compte des transformations en cours (scrollIntoView
-// viserait le rectangle déformé d'une section encore « loin dans le couloir »).
-function layoutTop(el: HTMLElement): number {
-  let top = 0;
-  for (
-    let n: HTMLElement | null = el;
-    n;
-    n = n.offsetParent as HTMLElement | null
-  )
-    top += n.offsetTop;
-  return top;
-}
+// Nom de la scène affiché dans les repères, selon l'identifiant de la section.
+const SECTION_NAMES: Record<string, string> = {
+  accueil: 'ACCUEIL',
+  dossiers: 'DOSSIERS',
+  vaisseau: 'PLAN',
+  detecteur: 'DÉTECTEUR',
+  terminal: 'TERMINAL',
+  collection: 'COLLECTION',
+  apropos: 'À PROPOS',
+};
 
 // Écrit les lignes de démarrage lettre par lettre, comme un terminal.
 function useTypewriter(lines: string[], speed = 34) {
@@ -295,6 +293,7 @@ export default function AlienSite() {
     DÉTECTEUR: 'detecteur',
     TERMINAL: 'terminal',
     COLLECTION: 'collection',
+    'À PROPOS': 'apropos',
   }[section] ?? 'accueil') as LogSection;
   const log = useBoardLog(logSection, phase === 'site', beepLine);
   const [session] = useState(() =>
@@ -312,117 +311,32 @@ export default function AlienSite() {
     };
   }, []);
 
+  // Mode scènes : chaque section est une scène plein écran, le défilement avance dans le couloir.
+  const scenes = useScenes(phase === 'site' && depthOn, (id) =>
+    setSection(SECTION_NAMES[id] ?? 'ACCUEIL'),
+  );
+
+  // Sans le mode scènes (mouvements réduits) : page classique, avec repères et titres révélés.
   useEffect(() => {
-    if (phase !== 'site') return;
-    const ids: Record<string, string> = {
-      accueil: 'ACCUEIL',
-      dossiers: 'DOSSIERS',
-      vaisseau: 'PLAN',
-      detecteur: 'DÉTECTEUR',
-      terminal: 'TERMINAL',
-      collection: 'COLLECTION',
-    };
+    if (
+      phase !== 'site' ||
+      depthOn ||
+      typeof IntersectionObserver === 'undefined'
+    )
+      return;
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries)
-          if (e.isIntersecting) setSection(ids[e.target.id] ?? 'ACCUEIL');
+          if (e.isIntersecting)
+            setSection(SECTION_NAMES[e.target.id] ?? 'ACCUEIL');
       },
       { threshold: 0.5 },
     );
-    for (const id of Object.keys(ids)) {
+    for (const id of Object.keys(SECTION_NAMES)) {
       const el = document.getElementById(id);
       if (el) io.observe(el);
     }
     return () => io.disconnect();
-  }, [phase]);
-
-  // Les titres et les textes d'introduction se révèlent quand ils entrent à l'écran. Sans
-  // mouvement (préférence système) ou sans IntersectionObserver, ils restent affichés tels quels.
-  useEffect(() => {
-    if (
-      phase !== 'site' ||
-      reducedMotion() ||
-      typeof IntersectionObserver === 'undefined'
-    )
-      return;
-    const items = Array.from(
-      document.querySelectorAll<HTMLElement>(
-        '.al-section .al-eyebrow, .al-section .al-h2, .al-section .al-lead',
-      ),
-    );
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries)
-          if (e.isIntersecting) {
-            e.target.classList.add('is-in');
-            io.unobserve(e.target);
-          }
-      },
-      { threshold: 0.15 },
-    );
-    for (const el of items) {
-      el.classList.add('al-rv');
-      io.observe(el);
-    }
-    return () => {
-      io.disconnect();
-      for (const el of items) el.classList.remove('al-rv', 'is-in');
-    };
-  }, [phase]);
-
-  // On avance dans le couloir : une section ne monte pas depuis le bas de l'écran, elle reste
-  // retenue en haut et surgit du fond (petite et transparente, elle grandit), puis elle est relâchée
-  // et défile normalement. En sortant par le haut elle fonce vers nous et s'efface. Une section posée
-  // n'a aucune transformation (sinon ses éléments fixes et ses calculs de position seraient faussés).
-  useEffect(() => {
-    if (phase !== 'site' || !depthOn) return;
-    const sections = Array.from(
-      document.querySelectorAll<HTMLElement>('main .al-section'),
-    );
-    const clear = (el: HTMLElement) => {
-      el.style.transform = '';
-      el.style.opacity = '';
-      el.style.transformOrigin = '';
-      el.style.pointerEvents = '';
-    };
-    let raf = 0;
-    const update = () => {
-      raf = 0;
-      const vh = window.innerHeight;
-      for (const el of sections) {
-        const top = layoutTop(el) - window.scrollY;
-        const pose = depthPose(top, top + el.offsetHeight, vh);
-        if (pose.atRest) {
-          clear(el);
-        } else {
-          el.style.transformOrigin = `50% ${Math.round(pose.originY)}px`;
-          el.style.transform = `translateY(${Math.round(pose.shiftY)}px) scale(${pose.scale.toFixed(4)})`;
-          el.style.opacity = pose.opacity.toFixed(3);
-          el.style.pointerEvents = pose.interactive ? '' : 'none';
-        }
-      }
-    };
-    const schedule = () => {
-      if (!raf) raf = requestAnimationFrame(update);
-    };
-    // Atteindre un élément au clavier dans une section encore « loin » : on va à la section.
-    const onFocus = (e: FocusEvent) => {
-      const target = e.target as HTMLElement | null;
-      const sec = target?.closest<HTMLElement>('main .al-section');
-      if (sec && sec.style.pointerEvents === 'none')
-        window.scrollTo({ top: layoutTop(sec), behavior: 'auto' });
-    };
-    update();
-    window.addEventListener('scroll', schedule, { passive: true });
-    window.addEventListener('resize', schedule);
-    document.addEventListener('focusin', onFocus);
-    return () => {
-      if (raf) cancelAnimationFrame(raf);
-      window.removeEventListener('scroll', schedule);
-      window.removeEventListener('resize', schedule);
-      document.removeEventListener('focusin', onFocus);
-      for (const el of sections) clear(el);
-    };
   }, [phase, depthOn]);
 
   // Échap referme le menu des petits écrans.
@@ -481,8 +395,10 @@ export default function AlienSite() {
     sfx('click');
     const el = document.getElementById(id);
     if (!el) return;
-    const top = layoutTop(el);
-    window.scrollTo({ top, behavior: reducedMotion() ? 'auto' : 'smooth' });
+    const behavior = reducedMotion() ? 'auto' : 'smooth';
+    const y = depthOn ? scenes.scrollFor(el) : null;
+    if (y !== null) window.scrollTo({ top: y, behavior });
+    else el.scrollIntoView({ behavior });
   };
   // Son de survol des boutons à la souris seulement (pas au clavier ni au toucher).
   const hover = {
@@ -604,7 +520,7 @@ export default function AlienSite() {
       </header>
 
       <main>
-        <section id="accueil" className="al-hero">
+        <section id="accueil" className="al-hero al-scene" data-scene>
           <p className="al-ghost" aria-hidden="true">
             NOSTROMO
           </p>
@@ -640,7 +556,7 @@ export default function AlienSite() {
           </button>
         </section>
 
-        <section id="dossiers" className="al-section">
+        <section id="dossiers" className="al-section al-scene" data-scene>
           <p className="al-eyebrow">{'// DOSSIERS DE L’ÉQUIPAGE'}</p>
           <h2 className="al-h2">Six dossiers, un seul vol.</h2>
           <p className="al-lead">
@@ -653,7 +569,11 @@ export default function AlienSite() {
           </ul>
         </section>
 
-        <section id="vaisseau" className="al-section al-ship-section">
+        <section
+          id="vaisseau"
+          className="al-section al-ship-section al-scene"
+          data-scene
+        >
           <p className="al-eyebrow">{'// PLAN DU NOSTROMO'}</p>
           <h2 className="al-h2">Visite le vaisseau.</h2>
           <p className="al-lead">
@@ -664,7 +584,11 @@ export default function AlienSite() {
           <ShipMap visited={visited} onVisit={visitRoom} onGo={goTarget} />
         </section>
 
-        <section id="detecteur" className="al-section al-trk-section">
+        <section
+          id="detecteur"
+          className="al-section al-trk-section al-scene"
+          data-scene
+        >
           <div>
             <p className="al-eyebrow">{'// DÉTECTEUR DE MOUVEMENT'}</p>
             <h2 className="al-h2">Rien ne bouge. Vraiment ?</h2>
@@ -687,7 +611,11 @@ export default function AlienSite() {
           />
         </section>
 
-        <section id="terminal" className="al-section al-term-section">
+        <section
+          id="terminal"
+          className="al-section al-term-section al-scene"
+          data-scene
+        >
           <p className="al-eyebrow">{'// TERMINAL MU/TH/UR'}</p>
           <h2 className="al-h2">Appelle la Compagnie.</h2>
           <p className="al-lead">
@@ -700,7 +628,11 @@ export default function AlienSite() {
           <MuthurTerminal beep={beep} sfx={sfx} />
         </section>
 
-        <section id="collection" className="al-section al-pack-section">
+        <section
+          id="collection"
+          className="al-section al-pack-section al-scene"
+          data-scene
+        >
           <p className="al-eyebrow">{'// ŒUFS ET COLLECTION'}</p>
           <h2 className="al-h2">Ouvre un œuf.</h2>
           <p className="al-lead">
@@ -722,7 +654,7 @@ export default function AlienSite() {
         </section>
       </main>
 
-      <footer id="apropos" className="al-footer">
+      <footer id="apropos" className="al-footer al-scene" data-scene>
         <p>
           Page de fan réalisée pour un exercice de design interactif. Alien et
           ses personnages appartiennent à 20th Century Studios. Textes
@@ -735,6 +667,7 @@ export default function AlienSite() {
           est dessiné à la main sur un canvas.
         </p>
       </footer>
+      <div ref={scenes.spacer} className="al-spacer" aria-hidden="true" />
 
       <BoardLog lines={log.lines} shown={log.shown} onToggle={log.toggle} />
       <Hud

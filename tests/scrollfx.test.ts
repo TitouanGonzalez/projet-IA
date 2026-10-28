@@ -4,7 +4,10 @@ import {
   FOCAL,
   RING_SPACING,
   cameraAt,
-  depthPose,
+  activeScene,
+  buildTimeline,
+  scenePose,
+  sceneScrollFor,
   clamp01,
   eggFromScroll,
   follow,
@@ -121,69 +124,98 @@ test('caméra : avance avec le défilement, dérive sauf si les mouvements sont 
   assert.equal(cameraAt(0, 10, true), 0);
 });
 
-test('profondeur : une section en bas de l’écran est petite, transparente et pas cliquable', () => {
-  const p = depthPose(900, 1900, 900);
-  assert.equal(p.atRest, false);
-  assert.equal(p.opacity, 0);
-  assert.equal(p.scale, 0.35);
-  assert.equal(p.shiftY, 0);
-  assert.equal(p.interactive, false);
+const VH = 800;
+const tl = buildTimeline([800, 1000, 2000, 500], VH);
+
+test('scènes : le défilement total laisse lire la dernière scène', () => {
+  assert.equal(tl.starts[0], 0);
+  assert.equal(tl.starts.length, 4);
+  for (let i = 1; i < 4; i++) {
+    assert.equal(tl.starts[i], tl.ends[i - 1] + tl.gate);
+    assert.ok(tl.starts[i] > tl.starts[i - 1]);
+  }
+  assert.equal(tl.total, tl.ends[3] + VH);
+  assert.deepEqual(tl.reads, [0, 200, 1200, 0]);
 });
 
-test('profondeur : à sa place, aucune transformation', () => {
-  const p = depthPose(0, 1200, 900);
-  assert.equal(p.atRest, true);
-  assert.equal(p.scale, 1);
-  assert.equal(p.opacity, 1);
-  assert.equal(p.shiftY, 0);
-  assert.equal(p.interactive, true);
+test('scènes : une scène plus basse que l’écran est centrée', () => {
+  assert.deepEqual(tl.shifts, [0, 0, 0, 150]);
 });
 
-test('profondeur : en arrivant, la section reste retenue en haut au lieu de monter', () => {
-  const mid = depthPose(450, 1450, 900);
-  assert.equal(mid.shiftY, -450);
-  assert.ok(mid.opacity > 0 && mid.opacity < 1);
-  assert.ok(mid.scale > 0.35 && mid.scale < 1);
-  assert.equal(mid.interactive, false);
-  assert.equal(mid.originY, 450);
-  // Arrivée complète : taille normale, toujours retenue, cliquable, pas encore « posée ».
-  const docked = depthPose(100, 1100, 900);
-  assert.equal(docked.scale, 1);
-  assert.equal(docked.opacity, 1);
-  assert.equal(docked.shiftY, -100);
-  assert.equal(docked.interactive, true);
-  assert.equal(docked.atRest, false);
+test('scènes : au départ, la première est posée et les autres sont loin', () => {
+  const first = scenePose(0, 0, tl);
+  assert.equal(first.scale, 1);
+  assert.equal(first.opacity, 1);
+  assert.equal(first.interactive, true);
+  const far = scenePose(2, 0, tl);
+  assert.equal(far.opacity, 0);
+  assert.equal(far.scale, 0.35);
+  assert.equal(far.interactive, false);
 });
 
-test('profondeur : grandit et s’opacifie en avançant, sans retour en arrière', () => {
+test('scènes : au début de la lecture d’une scène, elle est posée et seule visible', () => {
+  for (let i = 0; i < 4; i++) {
+    const y = tl.starts[i];
+    const p = scenePose(i, y, tl);
+    assert.equal(p.interactive, true, String(i));
+    assert.equal(p.offset, 0);
+    for (let k = 0; k < 4; k++)
+      if (k !== i) assert.equal(scenePose(k, y, tl).opacity, 0, `${i} ${k}`);
+  }
+});
+
+test('scènes : le contenu défile à l’intérieur, jamais au-delà', () => {
+  const i = 2;
+  const mid = tl.starts[i] + 500;
+  assert.equal(scenePose(i, mid, tl).offset, 500);
+  assert.equal(scenePose(i, tl.starts[i] + 99999, tl).offset, tl.reads[i]);
+  assert.equal(scenePose(i, tl.starts[i] - 50, tl).offset, 0);
+});
+
+test('scènes : pendant un passage, l’une s’efface en grossissant et l’autre arrive', () => {
+  const y = tl.ends[1] + tl.gate / 2;
+  const out = scenePose(1, y, tl);
+  const into = scenePose(2, y, tl);
+  assert.ok(out.scale > 1 && out.opacity < 1 && out.opacity > 0);
+  assert.ok(into.scale < 1 && into.scale > 0.35 && into.opacity > 0);
+  assert.equal(out.interactive, false);
+  assert.equal(into.interactive, false);
+});
+
+test('scènes : arrivée monotone, sans retour en arrière', () => {
   let lastScale = 0;
   let lastOpacity = -1;
-  for (let top = 899; top >= 0; top -= 50) {
-    const p = depthPose(top, top + 1000, 900);
-    assert.ok(p.scale >= lastScale && p.opacity >= lastOpacity, String(top));
-    assert.ok(p.opacity >= 0 && p.opacity <= 1);
+  for (let y = tl.ends[0]; y <= tl.starts[1]; y += 25) {
+    const p = scenePose(1, y, tl);
+    assert.ok(p.scale >= lastScale && p.opacity >= lastOpacity, String(y));
     lastScale = p.scale;
     lastOpacity = p.opacity;
   }
 });
 
-test('profondeur : en sortant par le haut, elle fonce vers nous et s’efface', () => {
-  const p = depthPose(-1500, -100, 900);
-  assert.equal(p.atRest, false);
-  assert.ok(p.scale > 1 && p.scale <= 1.35 + 1e-9);
-  assert.ok(p.opacity < 0.2);
-  assert.equal(p.interactive, false);
-  assert.equal(p.shiftY, 0);
+test('scènes : la dernière ne repart jamais', () => {
+  const p = scenePose(3, tl.total, tl);
+  assert.equal(p.leaving, 0);
+  assert.equal(p.opacity, 1);
 });
 
-test('profondeur : l’origine est le centre de l’écran, et un écran vide ne casse rien', () => {
-  assert.equal(depthPose(-100, 900, 800).originY, 500);
-  assert.deepEqual(depthPose(0, 0, 0), {
-    scale: 1,
-    opacity: 1,
-    shiftY: 0,
-    originY: 0,
-    atRest: true,
-    interactive: true,
-  });
+test('scènes : la scène courante suit le défilement', () => {
+  assert.equal(activeScene(0, tl), 0);
+  assert.equal(activeScene(tl.starts[1], tl), 1);
+  assert.equal(activeScene(tl.starts[2] + 300, tl), 2);
+  assert.equal(activeScene(tl.total, tl), 3);
+});
+
+test('scènes : atteindre un élément reste dans les limites de sa scène', () => {
+  assert.equal(sceneScrollFor(tl, 2, 0), tl.starts[2]);
+  assert.equal(sceneScrollFor(tl, 2, 620), tl.starts[2] + 500);
+  assert.equal(sceneScrollFor(tl, 2, 99999), tl.starts[2] + tl.reads[2]);
+});
+
+test('scènes : aucune scène ni écran vide ne casse le calcul', () => {
+  const none = buildTimeline([], VH);
+  assert.equal(none.total, VH);
+  const one = buildTimeline([300], VH);
+  assert.equal(one.total, one.ends[0] + VH);
+  assert.equal(scenePose(0, 123, one).opacity, 1);
 });

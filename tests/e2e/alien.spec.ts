@@ -1,9 +1,29 @@
 import { test, expect } from '@playwright/test';
 
-// Attend la fin du défilement doux : l'élément visé doit être à l'écran et ne plus bouger.
-// Le défilement est plus lent quand la machine est chargée, d'où cette attente active.
-async function settle(page: import('@playwright/test').Page, selector: string) {
+type Page = import('@playwright/test').Page;
+
+// Le site est fait de scènes plein écran : le défilement avance dans le couloir, il ne fait pas
+// glisser la page. Une scène n'est utilisable que quand elle est arrivée (ni transparente, ni
+// bloquée aux clics), et son contenu long défile à l'intérieur d'elle.
+async function sceneAtRest(page: Page, selector: string) {
   const target = page.locator(selector).first();
+  await expect
+    .poll(() =>
+      target.evaluate((el) => {
+        const scene = el.closest<HTMLElement>('[data-scene]');
+        return (
+          !scene ||
+          (scene.style.pointerEvents === '' && scene.style.opacity === '')
+        );
+      }),
+    )
+    .toBe(true);
+}
+
+// Attend la fin du défilement doux : la scène de l'élément est arrivée et l'élément ne bouge plus.
+async function settle(page: Page, selector: string) {
+  const target = page.locator(selector).first();
+  await sceneAtRest(page, selector);
   let last = Number.NaN;
   let stable = 0;
   for (let i = 0; i < 80 && stable < 4; i++) {
@@ -17,33 +37,43 @@ async function settle(page: import('@playwright/test').Page, selector: string) {
   }
 }
 
-// Les sections arrivent du fond du couloir : tant qu'elles n'ont pas fini d'arriver, elles ne sont
-// ni à leur taille ni cliquables. On saute à la section et on attend qu'elle soit posée.
-async function snap(page: import('@playwright/test').Page, id: string) {
+// Saute à une scène (sans défilement doux) et attend qu'elle soit arrivée.
+async function snap(page: Page, id: string) {
   await page.evaluate((i) => {
-    let top = 0;
-    for (
-      let n: HTMLElement | null = document.getElementById(i);
-      n;
-      n = n.offsetParent as HTMLElement | null
-    )
-      top += n.offsetTop;
-    window.scrollTo({ top, behavior: 'instant' });
+    const scene = document.getElementById(i)!;
+    window.scrollTo({ top: Number(scene.dataset.start), behavior: 'instant' });
   }, id);
 }
-async function jump(page: import('@playwright/test').Page, id: string) {
+async function jump(page: Page, id: string) {
   await snap(page, id);
-  await atRest(page, id);
+  await sceneAtRest(page, '#' + id);
 }
-async function atRest(page: import('@playwright/test').Page, id: string) {
-  await expect
-    .poll(() =>
-      page.evaluate((i) => {
-        const el = document.getElementById(i)!;
-        return el.style.transform === '' && el.style.pointerEvents === '';
-      }, id),
-    )
-    .toBe(true);
+const atRest = (page: Page, id: string) => sceneAtRest(page, '#' + id);
+
+// Amène un élément d'une scène haute dans la zone visible, en faisant défiler la page comme le
+// ferait un lecteur (le contenu de la scène défile à l'intérieur d'elle).
+async function bring(page: Page, selector: string) {
+  await page
+    .locator(selector)
+    .first()
+    .evaluate((el) => {
+      const scene = el.closest<HTMLElement>('[data-scene]');
+      if (!scene) return;
+      let top = 0;
+      for (
+        let n: HTMLElement | null = el as HTMLElement;
+        n && n !== scene;
+        n = n.offsetParent as HTMLElement | null
+      )
+        top += n.offsetTop;
+      const read = Number(scene.dataset.read);
+      const offset = Math.min(read, Math.max(0, top - 160));
+      window.scrollTo({
+        top: Number(scene.dataset.start) + offset,
+        behavior: 'instant',
+      });
+    });
+  await sceneAtRest(page, selector);
 }
 
 const title = 'Nostromo, dossiers de l’équipage';
@@ -592,6 +622,7 @@ test('collection : 24 cartes, filtre par rareté, mode démo et réinitialisatio
   await openCollection(page);
   const cells = page.locator('.al-coll-cell');
   await expect(cells).toHaveCount(24);
+  await bring(page, '#cartes');
   await page.getByRole('button', { name: 'LÉGENDAIRE', exact: true }).click();
   await expect(cells).toHaveCount(2);
   await page.getByRole('button', { name: 'COMMUNE', exact: true }).click();
@@ -602,6 +633,7 @@ test('collection : 24 cartes, filtre par rareté, mode démo et réinitialisatio
   await expect(
     page.getByRole('article', { name: /pas encore obtenue/ }),
   ).toHaveCount(24);
+  await bring(page, '.al-pack');
   await eggButton(page).click();
   await expect(page.locator('.al-pack')).toHaveAttribute(
     'data-phase',
@@ -613,6 +645,7 @@ test('collection : 24 cartes, filtre par rareté, mode démo et réinitialisatio
   await expect(
     page.getByRole('article', { name: /pas encore obtenue/ }),
   ).toHaveCount(23);
+  await bring(page, 'button:has-text("MODE DÉMO")');
   // Mode démo : un œuf toutes les 10 secondes, donc le stock remonte vite.
   await page.getByRole('button', { name: /MODE DÉMO/ }).click();
   await expect(
@@ -633,6 +666,7 @@ test('collection : 24 cartes, filtre par rareté, mode démo et réinitialisatio
   const reset = page.getByRole('button', {
     name: 'RÉINITIALISER LA COLLECTION',
   });
+  await bring(page, 'button:has-text("RÉINITIALISER")');
   await reset.click();
   await expect(page.locator('.al-coll')).toHaveAttribute('data-owned', '1');
   await page.getByRole('button', { name: /CONFIRMER : TOUT EFFACER/ }).click();
@@ -832,6 +866,11 @@ test('défilement : sans mouvement demandé, tout reste affiché et immobile', a
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await enterSite(page);
   await expect(page.locator('.al-rv')).toHaveCount(0);
+  expect(
+    await page.evaluate(
+      () => getComputedStyle(document.getElementById('dossiers')!).position,
+    ),
+  ).not.toBe('fixed');
   await expect(page.locator('canvas.al-tunnel')).toHaveAttribute(
     'data-frames',
     '0',
@@ -847,69 +886,99 @@ test('défilement : sans mouvement demandé, tout reste affiché et immobile', a
   );
 });
 
-test('défilement : les sections arrivent du fond du couloir puis se posent', async ({
+const poseOf = (page: Page, id: string) =>
+  page.evaluate((i) => {
+    const el = document.getElementById(i)!;
+    return {
+      transform: el.style.transform,
+      opacity: el.style.opacity,
+      events: el.style.pointerEvents,
+      position: getComputedStyle(el).position,
+    };
+  }, id);
+
+test('défilement : les scènes arrivent du fond du couloir puis se posent', async ({
   page,
 }) => {
   await enterSite(page);
-  const read = (id: string) =>
-    page.evaluate((i) => {
-      const el = document.getElementById(i)!;
-      return { transform: el.style.transform, opacity: el.style.opacity };
-    }, id);
-  // Une section encore loin dans le couloir est réduite et transparente.
-  const far = await read('terminal');
+  // Une scène encore loin dans le couloir est réduite, transparente et pas cliquable.
+  const far = await poseOf(page, 'terminal');
   expect(far.transform).toContain('scale(0.35');
   expect(Number(far.opacity)).toBe(0);
-  // Arrivée sur une section : elle est posée, sans aucune transformation.
+  expect(far.events).toBe('none');
+  // Arrivée sur une scène : elle est posée, et l'accueil est passé derrière nous.
   await page.getByRole('button', { name: ':TERMINAL' }).click();
-  await expect
-    .poll(() => read('terminal'))
-    .toEqual({ transform: '', opacity: '' });
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () => document.getElementById('terminal')!.getBoundingClientRect().top,
-      ),
-    )
-    .toBeLessThan(5);
-  // La section d'avant est passée derrière nous : elle s'est effacée.
-  const behind = await read('detecteur');
-  expect(Number(behind.opacity)).toBeLessThan(1);
+  await atRest(page, 'terminal');
+  const here = await poseOf(page, 'terminal');
+  expect(here.opacity).toBe('');
+  expect(here.events).toBe('');
+  const behind = await poseOf(page, 'accueil');
+  expect(Number(behind.opacity)).toBe(0);
 });
 
-test('défilement : en arrivant, la section reste en haut au lieu de monter', async ({
+test('défilement : pendant un passage les scènes se croisent sans glisser', async ({
   page,
 }) => {
   await enterSite(page);
-  const vh = 1100;
-  // Le haut de #dossiers est à (hauteur de l'accueil + espace). On le fait entrer à mi-course.
-  const start = await page.evaluate(() => {
-    let top = 0;
-    for (
-      let n: HTMLElement | null = document.getElementById('dossiers');
-      n;
-      n = n.offsetParent as HTMLElement | null
-    )
-      top += n.offsetTop;
-    return top;
+  await page.evaluate(() => {
+    const d = document.getElementById('dossiers')!;
+    const gate = 0.8 * window.innerHeight;
+    window.scrollTo({
+      top: Number(d.dataset.start) - gate / 2,
+      behavior: 'instant',
+    });
   });
-  await page.evaluate((y) => window.scrollTo(0, y), start - vh * 0.6);
   await expect
-    .poll(() =>
-      page.evaluate(
-        () => Number(document.getElementById('dossiers')!.style.opacity) > 0,
-      ),
-    )
-    .toBe(true);
-  const mid = await page.evaluate(() => {
-    const el = document.getElementById('dossiers')!;
-    return {
-      top: el.getBoundingClientRect().top,
-      opacity: Number(el.style.opacity),
-    };
+    .poll(async () => Number((await poseOf(page, 'dossiers')).opacity))
+    .toBeGreaterThan(0.2);
+  const hero = await poseOf(page, 'accueil');
+  const next = await poseOf(page, 'dossiers');
+  // L'accueil fonce vers nous en s'effaçant, les dossiers surgissent du fond.
+  expect(Number(hero.opacity)).toBeGreaterThan(0);
+  expect(Number(hero.opacity)).toBeLessThan(1);
+  expect(Number(next.opacity)).toBeLessThan(1);
+  expect(hero.transform).toMatch(/scale\(1\.\d+\)/);
+  expect(next.transform).toMatch(/scale\(0\.\d+\)/);
+  expect(hero.position).toBe('fixed');
+  expect(next.position).toBe('fixed');
+  expect(hero.events).toBe('none');
+  expect(next.events).toBe('none');
+});
+
+test('défilement : le contenu long d’une scène se lit sur place', async ({
+  page,
+}) => {
+  await enterSite(page);
+  await jump(page, 'collection');
+  const read = await page.evaluate(() =>
+    Number(document.getElementById('collection')!.dataset.read),
+  );
+  expect(read).toBeGreaterThan(500);
+  await page.evaluate(() => {
+    const c = document.getElementById('collection')!;
+    window.scrollTo({
+      top: Number(c.dataset.start) + 500,
+      behavior: 'instant',
+    });
   });
-  // La section est retenue en haut de l'écran, partiellement visible, et ne glisse pas depuis le bas.
-  expect(Math.abs(mid.top)).toBeLessThan(vh * 0.4);
-  expect(mid.opacity).toBeGreaterThan(0);
-  expect(mid.opacity).toBeLessThan(1);
+  await expect
+    .poll(async () => (await poseOf(page, 'collection')).transform)
+    .toContain('translateY(-500px)');
+  // Toujours arrivée et utilisable pendant la lecture.
+  const pose = await poseOf(page, 'collection');
+  expect(pose.opacity).toBe('');
+  expect(pose.events).toBe('');
+});
+
+test('défilement : au clavier, Tab amène la scène et l’élément en vue', async ({
+  page,
+}) => {
+  await enterSite(page);
+  await page.getByRole('button', { name: 'DÉCOUVRIR' }).focus();
+  const second = page.locator('.al-card').nth(4);
+  await second.focus();
+  await atRest(page, 'dossiers');
+  const box = (await second.boundingBox())!;
+  expect(box.y).toBeGreaterThan(80);
+  expect(box.y + box.height).toBeLessThan(page.viewportSize()!.height);
 });
