@@ -14,6 +14,7 @@ import { CollectionView, PackOpening, useCollection } from './Cards.js';
 import MuthurTerminal from './MuthurTerminal.js';
 import Ovomorph from './Ovomorph.js';
 import CrewScan from './CrewScan.js';
+import ScrollTunnel from './ScrollTunnel.js';
 import ShipMap from './ShipMap.js';
 import { BoardLog, useBoardLog } from './BoardLog.js';
 import {
@@ -320,6 +321,40 @@ export default function AlienSite() {
     return () => io.disconnect();
   }, [phase]);
 
+  // Les titres et les textes d'introduction se révèlent quand ils entrent à l'écran. Sans
+  // mouvement (préférence système) ou sans IntersectionObserver, ils restent affichés tels quels.
+  useEffect(() => {
+    if (
+      phase !== 'site' ||
+      reducedMotion() ||
+      typeof IntersectionObserver === 'undefined'
+    )
+      return;
+    const items = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        '.al-section .al-eyebrow, .al-section .al-h2, .al-section .al-lead',
+      ),
+    );
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries)
+          if (e.isIntersecting) {
+            e.target.classList.add('is-in');
+            io.unobserve(e.target);
+          }
+      },
+      { threshold: 0.15 },
+    );
+    for (const el of items) {
+      el.classList.add('al-rv');
+      io.observe(el);
+    }
+    return () => {
+      io.disconnect();
+      for (const el of items) el.classList.remove('al-rv', 'is-in');
+    };
+  }, [phase]);
+
   // Échap referme le menu des petits écrans.
   useEffect(() => {
     if (!menuOpen) return;
@@ -431,6 +466,7 @@ export default function AlienSite() {
 
   return (
     <div className="al-root" data-phase="site">
+      <ScrollTunnel />
       <div className="al-fog" aria-hidden="true" />
       <div className="al-scan" aria-hidden="true" />
       <Cursor />
@@ -501,7 +537,7 @@ export default function AlienSite() {
           <p className="al-ghost" aria-hidden="true">
             NOSTROMO
           </p>
-          <Ovomorph hot={hot} />
+          <Ovomorph hot={hot} reactive />
           <h1 className="al-sr">Nostromo, dossiers de l’équipage</h1>
           <button
             type="button"

@@ -64,10 +64,15 @@ test('cartes : inclinaison 3D, dossier ouvert avec jauges, retour du focus', asy
   await expect
     .poll(
       async () => {
-        await card.scrollIntoViewIfNeeded();
         const box = (await card.boundingBox())!;
-        await page.mouse.move(box.x + box.width - 40, box.y + 40);
-        await page.mouse.move(box.x + box.width - 10, box.y + 10, { steps: 4 });
+        await card.hover({
+          position: { x: box.width - 40, y: 40 },
+          timeout: 8000,
+        });
+        await card.hover({
+          position: { x: box.width - 10, y: 10 },
+          timeout: 8000,
+        });
         return card.getAttribute('data-tilt');
       },
       { timeout: 30000, intervals: [250] },
@@ -761,4 +766,54 @@ test('mobile : menu burger, navigation et fermeture, curseur caché au toucher',
     ),
   ).toBe(true);
   await expect(page.locator('.al-hud-left')).toBeHidden();
+});
+
+test('défilement : le fond avance, l’œuf s’efface, les titres se révèlent', async ({
+  page,
+}) => {
+  await enterSite(page);
+  const tunnel = page.locator('canvas.al-tunnel');
+  await expect(tunnel).toHaveCount(1);
+  const frames = Number(await tunnel.getAttribute('data-frames'));
+  await expect
+    .poll(async () => Number(await tunnel.getAttribute('data-frames')))
+    .toBeGreaterThan(frames);
+  const cam0 = Number(await tunnel.getAttribute('data-cam'));
+  const egg = page.locator('#accueil canvas.al-egg');
+  await expect.poll(() => egg.evaluate((el) => el.style.opacity)).toBe('1');
+  await page.mouse.move(700, 500);
+  await page.mouse.wheel(0, 900);
+  await expect
+    .poll(async () => Number(await tunnel.getAttribute('data-cam')))
+    .toBeGreaterThan(cam0 + 400);
+  await page.mouse.wheel(0, 700);
+  await expect
+    .poll(async () => Number(await egg.evaluate((el) => el.style.opacity)))
+    .toBeLessThan(0.3);
+  await page.getByRole('button', { name: ':PLAN' }).click();
+  await expect(page.locator('#vaisseau .al-h2')).toHaveClass(/is-in/);
+  await expect(
+    page.getByRole('heading', { name: 'Visite le vaisseau.' }),
+  ).toBeVisible();
+});
+
+test('défilement : sans mouvement demandé, tout reste affiché et immobile', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await enterSite(page);
+  await expect(page.locator('.al-rv')).toHaveCount(0);
+  await expect(page.locator('canvas.al-tunnel')).toHaveAttribute(
+    'data-frames',
+    '0',
+  );
+  await expect(page.locator('#accueil canvas.al-egg')).toHaveAttribute(
+    'data-frames',
+    /\d+/,
+  );
+  await page.mouse.wheel(0, 900);
+  await expect(page.locator('canvas.al-tunnel')).toHaveAttribute(
+    'data-frames',
+    '0',
+  );
 });

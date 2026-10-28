@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { eggFromScroll, heroProgress } from '../../shared/scrollfx.js';
 
 // Œuf en fil de fer, dessiné et projeté à la main sur un canvas 2D (aucune bibliothèque 3D).
 // Il suit la souris, respire doucement, et ses quatre pétales s'ouvrent quand on approche.
@@ -34,7 +35,15 @@ function buildEgg(open: number): V[][] {
   return rings;
 }
 
-export default function Ovomorph({ hot }: { hot: boolean }) {
+// Avec reactive, l'œuf de l'accueil réagit au défilement : il s'ouvre en grand, tourne plus vite,
+// grossit un peu puis s'efface en remontant quand on quitte la section d'accueil.
+export default function Ovomorph({
+  hot,
+  reactive = false,
+}: {
+  hot: boolean;
+  reactive?: boolean;
+}) {
   const ref = useRef<HTMLCanvasElement>(null);
   const hotRef = useRef(hot);
   useEffect(() => {
@@ -102,11 +111,24 @@ export default function Ovomorph({ hot }: { hot: boolean }) {
       last = now;
       frames++;
       canvas.dataset.frames = String(frames);
-      if (!still) yaw += dt * 0.35;
+      const pose =
+        reactive && !still
+          ? eggFromScroll(
+              heroProgress(
+                window.scrollY,
+                canvas.parentElement?.clientHeight ?? 0,
+              ),
+            )
+          : null;
+      if (pose) {
+        const o = String(Math.round(pose.opacity * 100) / 100);
+        if (canvas.style.opacity !== o) canvas.style.opacity = o;
+      }
+      if (!still) yaw += dt * (0.35 + (pose?.spin ?? 0));
       smoothX += (mouse.x - smoothX) * Math.min(1, dt * 4);
       smoothY += (mouse.y - smoothY) * Math.min(1, dt * 4);
       const breath = still ? 0.1 : 0.1 + 0.05 * Math.sin(now / 900);
-      const target = hotRef.current ? 0.95 : breath;
+      const target = Math.max(hotRef.current ? 0.95 : breath, pose?.open ?? 0);
       open += (target - open) * Math.min(1, dt * 3);
       const a = yaw + smoothX * 0.9;
       const b = 0.28 + smoothY * 0.45;
@@ -114,7 +136,8 @@ export default function Ovomorph({ hot }: { hot: boolean }) {
       const cosA = Math.cos(a);
       const sinB = Math.sin(b);
       const cosB = Math.cos(b);
-      const scale = Math.min(width, height) * 0.36;
+      const scale = Math.min(width, height) * 0.36 * (pose?.scale ?? 1);
+      const lift = (pose?.lift ?? 0) * height;
       const project = (v: V) => {
         const x1 = v.x * cosA + v.z * sinA;
         const z1 = -v.x * sinA + v.z * cosA;
@@ -123,7 +146,7 @@ export default function Ovomorph({ hot }: { hot: boolean }) {
         const f = 3.4 / (3.4 - z2);
         return {
           x: width / 2 + x1 * scale * f,
-          y: height / 2 - y2 * scale * f,
+          y: height / 2 + lift - y2 * scale * f,
           z: z2,
         };
       };
@@ -159,7 +182,7 @@ export default function Ovomorph({ hot }: { hot: boolean }) {
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('resize', resize);
     };
-  }, []);
+  }, [reactive]);
 
   return (
     <canvas ref={ref} className="al-egg" aria-hidden="true" data-frames="0" />
