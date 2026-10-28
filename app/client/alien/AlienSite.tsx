@@ -7,10 +7,30 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
-import { Game } from '../Game.js';
 import { bootLines, dossiers, type Dossier } from './data.js';
-import { createSoundtrack, type Soundtrack } from './audio.js';
+import { createSoundtrack, type SoundKind, type Soundtrack } from './audio.js';
 import Ovomorph from './Ovomorph.js';
+
+type Sfx = (kind: SoundKind) => void;
+
+// Portraits facultatifs : il suffit de déposer un fichier nommé comme le dossier
+// (ripley.jpg, xenomorphe.png, ash.webp...) dans app/client/alien/images/.
+const photos = import.meta.glob('./images/*.{jpg,jpeg,png,webp}', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+}) as Record<string, string>;
+function photoFor(id: string): string | undefined {
+  for (const [path, url] of Object.entries(photos))
+    if (
+      path
+        .split('/')
+        .pop()!
+        .replace(/\.[^.]+$/, '') === id
+    )
+      return url;
+  return undefined;
+}
 
 function reducedMotion(): boolean {
   try {
@@ -200,11 +220,14 @@ function useTilt<T extends HTMLElement>(max = 14) {
 function DossierCard({
   d,
   onOpen,
+  sfx,
 }: {
   d: Dossier;
   onOpen: (d: Dossier, el: HTMLElement) => void;
+  sfx: Sfx;
 }) {
   const tilt = useTilt<HTMLButtonElement>(12);
+  const photo = photoFor(d.id);
   return (
     <li className="al-cell">
       <button
@@ -213,6 +236,9 @@ function DossierCard({
         aria-haspopup="dialog"
         ref={tilt.ref}
         onPointerMove={tilt.onPointerMove}
+        onPointerEnter={(e) => {
+          if (e.pointerType === 'mouse') sfx('hover');
+        }}
         onPointerLeave={tilt.onPointerLeave}
         onClick={(e) => onOpen(d, e.currentTarget)}
       >
@@ -221,8 +247,12 @@ function DossierCard({
           <span>{d.code}</span>
           <span>{d.origin}</span>
         </span>
-        <span className="al-card-icon">
-          <Icon kind={d.icon} />
+        <span className={`al-card-icon${photo ? ' has-photo' : ''}`}>
+          {photo ? (
+            <img className="al-photo" src={photo} alt="" />
+          ) : (
+            <Icon kind={d.icon} />
+          )}
         </span>
         <span className="al-card-name">{d.name}</span>
         <span className="al-card-role">{d.role}</span>
@@ -277,7 +307,11 @@ function DossierDialog({ d, onClose }: { d: Dossier; onClose: () => void }) {
         </div>
         <div className="al-sheet-body">
           <div className="al-sheet-art" aria-hidden="true">
-            <Icon kind={d.icon} />
+            {photoFor(d.id) ? (
+              <img className="al-photo" src={photoFor(d.id)} alt="" />
+            ) : (
+              <Icon kind={d.icon} />
+            )}
           </div>
           <div className="al-sheet-text">
             <p className="al-status">{`STATUT : ${d.status}`}</p>
@@ -341,7 +375,6 @@ export default function AlienSite() {
     const ids: Record<string, string> = {
       accueil: 'ACCUEIL',
       dossiers: 'DOSSIERS',
-      survivre: 'SURVIVRE',
     };
     const io = new IntersectionObserver(
       (entries) => {
@@ -370,24 +403,37 @@ export default function AlienSite() {
     }
     setPhase('site');
   };
+  const sfx = useCallback<Sfx>((kind) => sound.current?.play(kind), []);
   const toggleSound = () => {
     const s = sound.current;
     if (!s) return;
+    if (s.on) s.play('click');
     s.setOn(!s.on);
+    if (s.on) s.play('click');
     setSoundOn(s.on);
   };
-  const go = (id: string) =>
+  const go = (id: string) => {
+    sfx('click');
     document
       .getElementById(id)
       ?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth' });
+  };
+  // Son de survol des boutons à la souris seulement (pas au clavier ni au toucher).
+  const hover = {
+    onPointerEnter: (e: ReactPointerEvent) => {
+      if (e.pointerType === 'mouse') sfx('hover');
+    },
+  };
   const openDossier = (d: Dossier, el: HTMLElement) => {
     trigger.current = el;
+    sfx('open');
     setOpen(d);
   };
   const closeDossier = useCallback(() => {
+    sfx('close');
     setOpen(null);
     trigger.current?.focus();
-  }, []);
+  }, [sfx]);
 
   if (phase === 'intro') {
     return (
@@ -434,13 +480,10 @@ export default function AlienSite() {
           NOSTROMO
         </button>
         <nav aria-label="Navigation" className="al-nav">
-          <button type="button" onClick={() => go('dossiers')}>
+          <button type="button" onClick={() => go('dossiers')} {...hover}>
             :DOSSIERS
           </button>
-          <button type="button" onClick={() => go('survivre')}>
-            :SURVIVRE
-          </button>
-          <button type="button" onClick={() => go('apropos')}>
+          <button type="button" onClick={() => go('apropos')} {...hover}>
             :À PROPOS
           </button>
           <button
@@ -449,6 +492,7 @@ export default function AlienSite() {
             aria-pressed={soundOn}
             disabled={!soundOk}
             onClick={toggleSound}
+            {...hover}
           >
             {soundOk ? `SOUND: ${soundOn ? 'ON' : 'OFF'}` : 'SOUND: N/A'}
           </button>
@@ -466,7 +510,10 @@ export default function AlienSite() {
             type="button"
             className="al-btn al-hero-left"
             onClick={() => go('dossiers')}
-            onPointerEnter={() => setHot(true)}
+            onPointerEnter={(e) => {
+              setHot(true);
+              hover.onPointerEnter(e);
+            }}
             onPointerLeave={() => setHot(false)}
             onFocus={() => setHot(true)}
             onBlur={() => setHot(false)}
@@ -476,13 +523,16 @@ export default function AlienSite() {
           <button
             type="button"
             className="al-btn al-hero-right"
-            onClick={() => go('survivre')}
-            onPointerEnter={() => setHot(true)}
+            onClick={() => go('apropos')}
+            onPointerEnter={(e) => {
+              setHot(true);
+              hover.onPointerEnter(e);
+            }}
             onPointerLeave={() => setHot(false)}
             onFocus={() => setHot(true)}
             onBlur={() => setHot(false)}
           >
-            SURVIVRE
+            À PROPOS
           </button>
         </section>
 
@@ -494,23 +544,9 @@ export default function AlienSite() {
           </p>
           <ul className="al-grid">
             {dossiers.map((d) => (
-              <DossierCard key={d.id} d={d} onOpen={openDossier} />
+              <DossierCard key={d.id} d={d} onOpen={openDossier} sfx={sfx} />
             ))}
           </ul>
-        </section>
-
-        <section id="survivre" className="al-section al-game-section">
-          <div>
-            <p className="al-eyebrow">{'// SURVIVRE'}</p>
-            <h2 className="al-h2">Esquive les débris.</h2>
-            <p className="al-lead">
-              Pilote la navette avec les flèches gauche et droite. Une seule
-              collision et le vol s’arrête.
-            </p>
-          </div>
-          <div className="ds al-game">
-            <Game caption={null} />
-          </div>
         </section>
       </main>
 

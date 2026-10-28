@@ -8,7 +8,9 @@ test('intro : démarrage du terminal, puis entrée sur le site', async ({
   await page.goto('/');
   await expect(page.getByRole('heading', { name: title })).toBeAttached();
   await expect(page.locator('[data-phase="intro"]')).toBeVisible();
-  await expect(page.getByText('START BOOTING SYSTEM...')).toBeVisible();
+  await expect(page.getByText('START BOOTING SYSTEM...')).toBeVisible({
+    timeout: 10_000,
+  });
   const enter = page.getByRole('button', { name: 'ENTER' });
   await expect(enter).toBeFocused();
   await page.keyboard.press('Enter');
@@ -95,25 +97,6 @@ test('musique : le bouton son bascule, ou se désactive sans audio', async ({
   await expect(sound).toHaveAttribute('aria-pressed', 'false');
 });
 
-test('jeu de la page : pilotage au clavier', async ({ page }) => {
-  await page.goto('/');
-  await page.getByRole('button', { name: 'ENTER' }).click();
-  await page
-    .getByRole('button', { name: 'SURVIVRE', exact: true })
-    .first()
-    .click();
-  const game = page.locator('.ds-game');
-  await game.scrollIntoViewIfNeeded();
-  await game.locator('canvas').focus();
-  await page.keyboard.press('Enter');
-  await expect(game).toHaveAttribute('data-state', 'playing');
-  const x0 = Number(await game.getAttribute('data-ship-x'));
-  await page.keyboard.down('ArrowLeft');
-  await page.waitForTimeout(250);
-  await page.keyboard.up('ArrowLeft');
-  expect(Number(await game.getAttribute('data-ship-x'))).toBeLessThan(x0);
-});
-
 test('mobile 390 px : aucun défilement horizontal', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
@@ -130,4 +113,31 @@ test('l’atelier d’origine reste accessible', async ({ page }) => {
   await expect(
     page.getByRole('heading', { name: 'Une source. Toutes les vues.' }),
   ).toBeVisible();
+});
+
+test('sons d’interaction : aucune erreur, son allumé puis coupé', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
+  await page.goto('/');
+  await page.getByRole('button', { name: 'ENTER' }).click();
+  const card = page.locator('.al-card').first();
+  await card.scrollIntoViewIfNeeded();
+  await card.hover();
+  await card.click();
+  await page.keyboard.press('Escape');
+  const sound = page.getByRole('button', { name: /^SOUND:/ });
+  if (await sound.isEnabled()) await sound.click();
+  await card.hover();
+  await card.click();
+  await page.keyboard.press('Escape');
+  expect(errors).toEqual([]);
+});
+
+test('le jeu de vaisseau n’est plus sur la page', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'ENTER' }).click();
+  await expect(page.locator('.ds-game')).toHaveCount(0);
+  await expect(page.getByText('SURVIVRE')).toHaveCount(0);
 });

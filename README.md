@@ -1,6 +1,6 @@
 # Nostromo, un site interactif sur l'équipage
 
-Un petit site de fan, dans l'univers de la saga Alien, réalisé pour un exercice de design interactif : un écran d'entrée de terminal, un œuf en fil de fer 3D qui suit la souris, six dossiers de personnages en cartes inclinées en 3D, un jeu d'esquive et une musique d'ambiance rétro-futuriste.
+Un petit site de fan, dans l'univers de la saga Alien, réalisé pour un exercice de design interactif : un écran d'entrée de terminal, un œuf en fil de fer 3D qui suit la souris, six dossiers de personnages en cartes inclinées en 3D, des petits sons d'interaction discrets et une musique d'ambiance rétro-futuriste.
 
 ![Accueil de Nostromo](docs/images/nostromo-accueil.png)
 
@@ -16,7 +16,7 @@ Un petit site de fan, dans l'univers de la saga Alien, réalisé pour un exercic
 
 - L'œuf en fil de fer est dessiné et projeté sur un canvas 2D, sans bibliothèque 3D.
 - Les cartes et les dossiers utilisent des transformations CSS 3D.
-- La musique est synthétisée dans le navigateur avec Web Audio : aucun fichier audio, donc aucun droit à gérer. Elle ne démarre qu'après le clic sur ENTER, et un bouton la coupe.
+- La musique et les sons d'interaction sont synthétisés dans le navigateur avec Web Audio : aucun fichier audio, donc aucun droit à gérer. Ils ne démarrent qu'après le clic sur ENTER, et un bouton les coupe.
 - Aucun flash, mouvements réduits si le système le demande, rien n'est stocké dans le navigateur.
 
 ## Mentions

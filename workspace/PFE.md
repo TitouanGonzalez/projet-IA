@@ -9,8 +9,8 @@ Page de fan, non officielle. Alien et ses personnages appartiennent à 20th Cent
 - Un écran d’entrée façon terminal, avec un texte de démarrage qui s’écrit lettre par lettre.
 - Une scène d’accueil avec un œuf en fil de fer 3D, dessiné sur un canvas 2D, qui suit la souris.
 - Six cartes de personnages qui s’inclinent en 3D selon la souris, et un dossier qui s’ouvre avec une mini-biographie et des jauges fictives.
-- Un jeu d’esquive piloté avec les flèches gauche et droite.
-- Une musique d’ambiance rétro-futuriste synthétisée dans le navigateur, qu’on peut couper.
+- De petits sons d’interaction discrets au survol et au clic.
+- Une musique d’ambiance rétro-futuriste synthétisée dans le navigateur, qu’on peut couper avec les sons.
 
 ## Publics et contraintes
 

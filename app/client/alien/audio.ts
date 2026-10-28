@@ -1,10 +1,23 @@
 // Musique d'ambiance rétro-futuriste, générée par Web Audio : aucun fichier audio,
 // donc aucun droit d'auteur à gérer. Elle ne démarre qu'après un geste de l'utilisateur.
+export type SoundKind = 'hover' | 'click' | 'open' | 'close';
 export interface Soundtrack {
   readonly on: boolean;
   setOn(on: boolean): void;
+  // Petit son d'interaction, très discret. Muet quand le son est coupé.
+  play(kind: SoundKind): void;
   stop(): void;
 }
+
+const BLIPS: Record<
+  SoundKind,
+  { from: number; to: number; dur: number; vol: number; type: OscillatorType }
+> = {
+  hover: { from: 1400, to: 1750, dur: 0.05, vol: 0.03, type: 'sine' },
+  click: { from: 620, to: 380, dur: 0.09, vol: 0.06, type: 'triangle' },
+  open: { from: 200, to: 740, dur: 0.38, vol: 0.07, type: 'triangle' },
+  close: { from: 740, to: 200, dur: 0.28, vol: 0.055, type: 'triangle' },
+};
 
 const SCALE = [110, 130.81, 146.83, 164.81, 196, 220, 261.63, 293.66, 329.63];
 const STEP = 60 / 78 / 2; // croches à 78 battements par minute
@@ -96,9 +109,32 @@ export function createSoundtrack(): Soundtrack | null {
   }, 60);
 
   let on = false;
+  let lastHover = 0;
   return {
     get on() {
       return on;
+    },
+    play(kind: SoundKind) {
+      if (!on || ctx.state !== 'running') return;
+      const now = ctx.currentTime;
+      if (kind === 'hover') {
+        if (now - lastHover < 0.09) return;
+        lastHover = now;
+      }
+      const b = BLIPS[kind];
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = b.type;
+      o.frequency.setValueAtTime(b.from, now);
+      o.frequency.exponentialRampToValueAtTime(b.to, now + b.dur);
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.exponentialRampToValueAtTime(b.vol, now + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + b.dur);
+      o.connect(g);
+      g.connect(master);
+      if (kind !== 'hover') g.connect(reverb);
+      o.start(now);
+      o.stop(now + b.dur + 0.05);
     },
     setOn(value: boolean) {
       on = value;

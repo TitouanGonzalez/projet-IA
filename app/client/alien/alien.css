@@ -8,7 +8,7 @@
   --dim: rgba(243, 233, 210, 0.62);
   --line: rgba(243, 233, 210, 0.3);
   --bg: #121212;
-  --alert: #e5484d;
+  --accent: #6dff8e;
   --mono: ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace;
   --wide: 'Segoe UI Black', 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
   /* Variables du design system, lues par le jeu d'esquive. */
@@ -17,7 +17,7 @@
   --color-brand: #f3e9d2;
   --color-brandHover: #fff6df;
   --color-onBrand: #121212;
-  --color-danger: #e5484d;
+  --color-danger: #6dff8e;
   --color-text: #f3e9d2;
   --color-surface: #181818;
   --color-muted: #cfc6b0;
@@ -72,7 +72,7 @@
   cursor: not-allowed;
 }
 .al-root :focus-visible {
-  outline: 2px solid var(--alert);
+  outline: 2px solid var(--accent);
   outline-offset: 4px;
 }
 .al-sr {
@@ -113,10 +113,10 @@
   left: 0;
   top: 0;
   z-index: 100;
-  color: var(--alert);
+  color: var(--accent);
   opacity: 0;
   pointer-events: none;
-  filter: drop-shadow(0 0 6px rgba(229, 72, 77, 0.7));
+  filter: drop-shadow(0 0 6px rgba(109, 255, 142, 0.6));
 }
 .al-cursor svg {
   display: block;
@@ -532,7 +532,7 @@
   animation: al-ring-b 22s linear infinite;
 }
 .al-status {
-  color: var(--alert);
+  color: var(--accent);
   font-size: 12px;
   letter-spacing: 0.14em;
 }
@@ -622,43 +622,6 @@
   }
 }
 
-/* Jeu */
-.al-root .al-game.ds {
-  margin-top: 28px;
-  max-width: 400px;
-  background: transparent;
-  color: var(--ink);
-  font-family: var(--mono);
-}
-.al-game .ds-game-canvas {
-  border: 1px solid var(--line);
-}
-.al-game .ds-button {
-  min-height: 46px;
-  background: var(--ink);
-  color: #121212;
-  border: 1px solid var(--ink);
-  font-family: var(--mono);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-.al-game .ds-button.secondary {
-  background: transparent;
-  color: var(--ink);
-  border-color: var(--line);
-}
-.al-game .ds-button:hover {
-  background: #fff6df;
-  color: #121212;
-}
-.al-game .ds-game-calm {
-  color: var(--ink);
-}
-.al-game .ds-game-score,
-.al-game .ds-game-status {
-  color: var(--ink);
-}
-
 .al-footer {
   max-width: 1280px;
   margin: 0 auto;
@@ -740,23 +703,28 @@
   color: var(--dim);
 }
 .al-root .al-status {
-  color: var(--alert);
-}
-.al-game-section {
-  display: grid;
-  grid-template-columns: 1fr 400px;
-  gap: 60px;
-  align-items: start;
-}
-.al-game-section .al-game.ds {
-  margin-top: 0;
-}
-@media (max-width: 960px) {
-  .al-game-section {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
+  color: var(--accent);
 }
 .al-root .al-ghost {
   color: rgba(243, 233, 210, 0.05);
+}
+
+/* Portraits : en niveaux de gris, pour garder l'ambiance terminal. */
+.al-card-icon.has-photo {
+  align-self: stretch;
+  min-height: 190px;
+}
+.al-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  filter: grayscale(1) contrast(1.1);
+}
+.al-sheet-art .al-photo {
+  position: relative;
+  z-index: 1;
+  width: 170px;
+  height: 214px;
+  animation: al-swing 7s ease-in-out infinite;
 }
