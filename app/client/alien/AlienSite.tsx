@@ -20,6 +20,15 @@ const photos = import.meta.glob('./images/*.{jpg,jpeg,png,webp}', {
   query: '?url',
   import: 'default',
 }) as Record<string, string>;
+// Cadrage des portraits (object-position), pour garder le visage dans la carte.
+const focus: Record<string, string> = {
+  ripley: '50% 18%',
+  xenomorphe: '40% 45%',
+  ash: '58% 30%',
+  bishop: '50% 28%',
+  jonesy: '72% 55%',
+  mother: '50% 50%',
+};
 function photoFor(id: string): string | undefined {
   for (const [path, url] of Object.entries(photos))
     if (
@@ -249,7 +258,12 @@ function DossierCard({
         </span>
         <span className={`al-card-icon${photo ? ' has-photo' : ''}`}>
           {photo ? (
-            <img className="al-photo" src={photo} alt="" />
+            <img
+              className="al-photo"
+              src={photo}
+              alt=""
+              style={{ objectPosition: focus[d.id] }}
+            />
           ) : (
             <Icon kind={d.icon} />
           )}
@@ -308,7 +322,12 @@ function DossierDialog({ d, onClose }: { d: Dossier; onClose: () => void }) {
         <div className="al-sheet-body">
           <div className="al-sheet-art" aria-hidden="true">
             {photoFor(d.id) ? (
-              <img className="al-photo" src={photoFor(d.id)} alt="" />
+              <img
+                className="al-photo"
+                src={photoFor(d.id)}
+                alt=""
+                style={{ objectPosition: focus[d.id] }}
+              />
             ) : (
               <Icon kind={d.icon} />
             )}
@@ -438,6 +457,7 @@ export default function AlienSite() {
   if (phase === 'intro') {
     return (
       <div className="al-root al-intro" data-phase="intro">
+        <div className="al-fog" aria-hidden="true" />
         <div className="al-scan" aria-hidden="true" />
         <Cursor />
         <p className="al-logo" aria-hidden="true">
@@ -468,6 +488,7 @@ export default function AlienSite() {
 
   return (
     <div className="al-root" data-phase="site">
+      <div className="al-fog" aria-hidden="true" />
       <div className="al-scan" aria-hidden="true" />
       <Cursor />
       <header className="al-header">
@@ -554,7 +575,9 @@ export default function AlienSite() {
         <p>
           Page de fan réalisée pour un exercice de design interactif. Alien et
           ses personnages appartiennent à 20th Century Studios. Textes
-          originaux, aucun visuel ni extrait du film.
+          originaux, sans extrait du film. Les portraits sont des images tirées
+          des films, propriété de leurs ayants droit, montrées ici à titre
+          d’illustration pour une présentation privée.
         </p>
         <p>
           La musique est générée en direct dans ton navigateur. Le fil de fer 3D

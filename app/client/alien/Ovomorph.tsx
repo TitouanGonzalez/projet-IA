@@ -56,6 +56,7 @@ export default function Ovomorph({ hot }: { hot: boolean }) {
     let width = 0;
     let height = 0;
     let ink = '#f3e9d2';
+    let accent = '#4f8a39';
     const resize = () => {
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       width = canvas.clientWidth;
@@ -63,8 +64,9 @@ export default function Ovomorph({ hot }: { hot: boolean }) {
       canvas.width = Math.max(1, Math.floor(width * dpr));
       canvas.height = Math.max(1, Math.floor(height * dpr));
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ink =
-        getComputedStyle(canvas).getPropertyValue('--ink').trim() || '#f3e9d2';
+      const css = getComputedStyle(canvas);
+      ink = css.getPropertyValue('--ink').trim() || '#f3e9d2';
+      accent = css.getPropertyValue('--accent').trim() || '#4f8a39';
     };
     resize();
     const onMove = (e: PointerEvent) => {
@@ -114,8 +116,8 @@ export default function Ovomorph({ hot }: { hot: boolean }) {
       ctx.clearRect(0, 0, width, height);
       ctx.lineWidth = 1.2;
       ctx.strokeStyle = ink;
-      ctx.shadowColor = ink;
-      ctx.shadowBlur = 6;
+      ctx.shadowColor = accent;
+      ctx.shadowBlur = 12;
       const grid = buildEgg(open).map((ring) => ring.map(project));
       const seg = (p: { x: number; y: number; z: number }, q: typeof p) => {
         ctx.globalAlpha = Math.max(

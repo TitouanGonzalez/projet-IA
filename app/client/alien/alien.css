@@ -8,7 +8,7 @@
   --dim: rgba(243, 233, 210, 0.62);
   --line: rgba(243, 233, 210, 0.3);
   --bg: #121212;
-  --accent: #6dff8e;
+  --accent: #4f8a39;
   --mono: ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace;
   --wide: 'Segoe UI Black', 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
   /* Variables du design system, lues par le jeu d'esquive. */
@@ -17,7 +17,7 @@
   --color-brand: #f3e9d2;
   --color-brandHover: #fff6df;
   --color-onBrand: #121212;
-  --color-danger: #6dff8e;
+  --color-danger: #4f8a39;
   --color-text: #f3e9d2;
   --color-surface: #181818;
   --color-muted: #cfc6b0;
@@ -137,7 +137,9 @@
   letter-spacing: 0.05em;
   color: transparent !important;
   -webkit-text-stroke: 1px var(--ink);
-  text-shadow: 0 0 10px rgba(243, 233, 210, 0.5);
+  text-shadow:
+    0 0 8px rgba(243, 233, 210, 0.4),
+    0 0 20px rgba(79, 138, 57, 0.9);
 }
 .al-root button.al-btn {
   display: inline-block;
@@ -149,7 +151,7 @@
   font-size: 18px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  box-shadow: 0 0 18px rgba(243, 233, 210, 0.35);
+  box-shadow: 0 0 20px rgba(79, 138, 57, 0.6);
   transition:
     transform 0.2s,
     box-shadow 0.2s;
@@ -157,7 +159,7 @@
 .al-root button.al-btn:hover,
 .al-root button.al-btn:focus-visible {
   transform: translateY(-2px);
-  box-shadow: 0 0 28px rgba(243, 233, 210, 0.6);
+  box-shadow: 0 0 34px rgba(79, 138, 57, 0.95);
 }
 
 /* Écran d'entrée */
@@ -176,7 +178,7 @@
   width: 64px;
   height: 64px;
   color: var(--ink);
-  filter: drop-shadow(0 0 6px rgba(243, 233, 210, 0.6));
+  filter: drop-shadow(0 0 7px rgba(79, 138, 57, 0.95));
 }
 
 /* Repères d'écran */
@@ -412,7 +414,7 @@
   width: 104px;
   height: 104px;
   color: var(--ink);
-  filter: drop-shadow(0 0 6px rgba(243, 233, 210, 0.5));
+  filter: drop-shadow(0 0 7px rgba(79, 138, 57, 0.95));
 }
 .al-card-name {
   font-family: var(--wide);
@@ -466,7 +468,7 @@
   padding: 22px 26px 30px;
   border: 1px solid var(--ink);
   background: #151515;
-  box-shadow: 0 0 40px rgba(243, 233, 210, 0.12);
+  box-shadow: 0 0 46px rgba(79, 138, 57, 0.4);
   transform: rotateX(var(--rx)) rotateY(var(--ry));
   transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
   animation: al-sheet-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -727,4 +729,119 @@
   width: 170px;
   height: 214px;
   animation: al-swing 7s ease-in-out infinite;
+}
+
+/* Vert Alien (#4F8A39) : lueur sur le curseur, le focus, les statuts et les cartes. */
+.al-root .al-cursor {
+  filter: drop-shadow(0 0 4px rgba(79, 138, 57, 0.95))
+    drop-shadow(0 0 14px rgba(79, 138, 57, 0.8));
+}
+.al-root :focus-visible {
+  outline: 2px solid var(--accent);
+  box-shadow: 0 0 14px rgba(79, 138, 57, 0.9);
+}
+/* Texte en vert : on éclaircit un peu le vert pour garder un contraste d'au moins 4,5:1. */
+.al-root .al-status {
+  color: color-mix(in srgb, var(--accent) 85%, var(--ink));
+  text-shadow: 0 0 10px var(--accent);
+}
+.al-root button.al-card:hover,
+.al-root button.al-card:focus-visible {
+  border-color: var(--accent) !important;
+  box-shadow:
+    0 0 22px rgba(79, 138, 57, 0.45),
+    inset 0 0 22px rgba(79, 138, 57, 0.14);
+}
+.al-meter i {
+  box-shadow: 0 0 10px rgba(79, 138, 57, 0.9);
+}
+
+/* Portraits : tons verts, comme un écran de terminal. */
+.al-photo {
+  filter: grayscale(1) sepia(0.7) hue-rotate(58deg) saturate(1.7)
+    brightness(0.92) contrast(1.12);
+}
+
+/* Brume acide : de grandes taches vertes floues qui dérivent très lentement. */
+.al-fog {
+  position: fixed;
+  inset: -20%;
+  z-index: 48;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.6;
+  mix-blend-mode: screen;
+  background: linear-gradient(
+    to top,
+    rgba(79, 138, 57, 0.2) 0%,
+    transparent 38%
+  );
+}
+.al-fog::before,
+.al-fog::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  filter: blur(48px);
+  will-change: transform;
+}
+.al-fog::before {
+  background:
+    radial-gradient(
+      40% 30% at 22% 70%,
+      rgba(79, 138, 57, 0.42),
+      transparent 70%
+    ),
+    radial-gradient(
+      34% 28% at 78% 84%,
+      rgba(103, 160, 70, 0.34),
+      transparent 70%
+    );
+  animation: al-mist-a 38s ease-in-out infinite alternate;
+}
+.al-fog::after {
+  background:
+    radial-gradient(
+      44% 24% at 62% 58%,
+      rgba(79, 138, 57, 0.3),
+      transparent 70%
+    ),
+    radial-gradient(
+      30% 30% at 10% 30%,
+      rgba(79, 138, 57, 0.22),
+      transparent 70%
+    );
+  animation: al-mist-b 55s ease-in-out infinite alternate;
+}
+@keyframes al-mist-a {
+  from {
+    transform: translate3d(-4%, 2%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(6%, -3%, 0) scale(1.15);
+  }
+}
+@keyframes al-mist-b {
+  from {
+    transform: translate3d(5%, -2%, 0) scale(1.1);
+  }
+  to {
+    transform: translate3d(-6%, 3%, 0) scale(1);
+  }
+}
+
+/* Zone portrait de hauteur fixe : les six cartes restent alignées, quelle que soit l'image. */
+.al-card-icon.has-photo {
+  flex: none;
+  height: 210px;
+  min-height: 0;
+}
+.al-card-icon.has-photo .al-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.al-sheet-art .al-photo {
+  width: 190px;
+  height: 230px;
 }

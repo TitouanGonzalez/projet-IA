@@ -24,3 +24,9 @@ Thumbs.db
 
 # Suivi de reprise local, non destiné à la distribution.
 /PROGRESS.md
+
+# Portraits tirés des films : droits réservés, gardés en local.
+app/client/alien/images/*.jpg
+app/client/alien/images/*.jpeg
+app/client/alien/images/*.png
+app/client/alien/images/*.webp

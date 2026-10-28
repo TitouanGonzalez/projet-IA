@@ -4,8 +4,6 @@ Un petit site de fan, dans l'univers de la saga Alien, réalisé pour un exercic
 
 ![Accueil de Nostromo](docs/images/nostromo-accueil.png)
 
-![Un dossier de personnage](docs/images/nostromo-dossier.png)
-
 ## Ce que contient ce dépôt
 
 - Le site Nostromo, qui s'ouvre à la racine (`/`).
@@ -21,7 +19,7 @@ Un petit site de fan, dans l'univers de la saga Alien, réalisé pour un exercic
 
 ## Mentions
 
-Page de fan, non officielle. Alien et ses personnages appartiennent à 20th Century Studios. Les textes sont originaux, sans citation ni visuel du film. Les jauges des dossiers sont fictives.
+Page de fan, non officielle. Alien et ses personnages appartiennent à 20th Century Studios. Les textes sont originaux, sans citation du film. Les jauges des dossiers sont fictives. Les portraits des personnages sont des images tirées des films : ils ne sont pas dans le dépôt, chacun les dépose en local dans `app/client/alien/images/` (voir le `LISEZMOI.md` de ce dossier).
 
 ## Lancer le site
 
