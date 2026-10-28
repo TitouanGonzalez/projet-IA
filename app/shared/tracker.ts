@@ -59,16 +59,47 @@ export function makeContacts(rng: () => number, count = 4): Contact[] {
   }));
 }
 
+// Danger : rester trop près d'un contact, trop longtemps, fait perdre la partie.
+export const DANGER_M = 2.5; // distance en dessous de laquelle le contact est « sur toi »
+export const DANGER_TIME = 2.5; // secondes cumulées avant de perdre
+export const PULL = 11; // vitesse (px/s) à laquelle un contact se rapproche de la sonde
+
+export function updateDanger(
+  level: number,
+  nearestMeters: number | null,
+  dt: number,
+): number {
+  if (nearestMeters !== null && nearestMeters < DANGER_M)
+    return Math.min(DANGER_TIME, level + dt);
+  return Math.max(0, level - dt * 1.5);
+}
+export const isLost = (level: number): boolean => level >= DANGER_TIME;
+
 // Les contacts dérivent lentement et rebondissent sur les bords de l'éventail.
+// Quand la sonde est dans l'éventail, ils s'en rapprochent doucement.
 export function stepContacts(
   contacts: Contact[],
   dt: number,
   rng: () => number,
+  target: Point | null = null,
 ): Contact[] {
   return contacts.map((c) => {
     let { r, a, vr, va } = c;
     r += vr * dt;
     a += va * dt;
+    if (target) {
+      const p = toXY(r, a);
+      const dx = target.x - p.x;
+      const dy = target.y - p.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 0.001) {
+        const move = Math.min(dist, PULL * dt);
+        const x = p.x + (dx / dist) * move;
+        const y = p.y + (dy / dist) * move;
+        r = Math.hypot(x - APEX.x, APEX.y - y) / RADIUS;
+        a = Math.atan2(x - APEX.x, APEX.y - y);
+      }
+    }
     if (r < 0.12 || r > 0.95) {
       vr = -vr;
       r = Math.max(0.12, Math.min(0.95, r));

@@ -589,19 +589,26 @@ export default function AlienSite() {
               Déplace la sonde avec ta souris, ou avec les flèches du clavier.
               Plus tu t’approches d’un contact caché, plus le bip s’accélère et
               monte. Un clic, ou la barre d’espace, lance une impulsion qui
-              révèle tout un instant.
+              révèle tout un instant. Mais les contacts s’approchent de ta sonde
+              : reste trop longtemps collé à l’un d’eux et la liaison est
+              perdue.
             </p>
           </div>
-          <MotionTracker beep={beep} onPing={() => sfx('open')} />
+          <MotionTracker
+            beep={beep}
+            onPing={() => sfx('open')}
+            onLose={() => sfx('close')}
+          />
         </section>
 
         <section id="terminal" className="al-section al-term-section">
           <p className="al-eyebrow">{'// TERMINAL MU/TH/UR'}</p>
           <h2 className="al-h2">Appelle la Compagnie.</h2>
           <p className="al-lead">
-            Tu as cinq messages pour la convaincre d’envoyer de l’aide. Chaque
-            réponse change sa crédibilité, son intérêt et son irritation. Si
-            elle accepte, tu gagnes. Sinon, personne ne viendra.
+            Tu as six messages pour la convaincre d’envoyer de l’aide. Parfois
+            tu choisis, parfois c’est toi qui écris. Chaque réponse change sa
+            crédibilité, son intérêt et son irritation. Si elle accepte, tu
+            gagnes. Sinon, personne ne viendra.
           </p>
           <MuthurTerminal beep={beep} sfx={sfx} />
         </section>

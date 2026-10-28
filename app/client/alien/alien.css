@@ -1193,3 +1193,108 @@
     gap: 2px;
   }
 }
+
+/* Zone où le joueur écrit son propre message. */
+.al-term-write {
+  display: grid;
+  gap: 8px;
+}
+.al-root .al-term-write label {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: var(--accent-lit);
+}
+.al-term-write textarea {
+  width: 100%;
+  min-height: 84px;
+  padding: 10px 12px;
+  resize: vertical;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #0c120b;
+  border: 1px solid var(--line);
+  border-radius: 0;
+}
+.al-term-write textarea:focus-visible {
+  border-color: var(--accent-lit);
+}
+.al-term-write textarea::placeholder {
+  color: var(--dim);
+}
+.al-term-write-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--dim);
+}
+.al-root .al-term-write-row button.al-btn:disabled {
+  opacity: 0.4;
+  box-shadow: none;
+}
+
+/* Détecteur : temps de survie, jauge de danger et écran de fin. */
+.al-root .al-trk-time {
+  position: absolute;
+  right: 4%;
+  top: 2%;
+  padding: 4px 8px;
+  background: rgba(9, 14, 9, 0.82);
+  border: 1px solid rgba(79, 138, 57, 0.4);
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  font-family: var(--mono);
+  font-size: clamp(9px, 2vw, 12px);
+  letter-spacing: 0.1em;
+  color: var(--accent-lit);
+}
+.al-root .al-trk-time b {
+  font-weight: 700;
+}
+.al-root .al-trk-danger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #d4665b;
+}
+.al-root .al-trk-danger em {
+  display: block;
+  width: clamp(46px, 12vw, 84px);
+  height: 7px;
+  border: 1px solid #d4665b;
+}
+.al-root .al-trk-danger i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: #d4665b;
+  box-shadow: 0 0 8px rgba(212, 102, 91, 0.8);
+}
+.al-trk-lost {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 16px;
+  text-align: center;
+  background: rgba(7, 10, 7, 0.86);
+}
+.al-root .al-trk-lost p {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: clamp(12px, 2.6vw, 15px);
+  letter-spacing: 0.1em;
+  color: var(--ink);
+}
+.al-root .al-trk-lost p:first-child {
+  font-family: var(--wide);
+  font-size: clamp(18px, 4.4vw, 28px);
+  color: #d4665b;
+  text-shadow: 0 0 14px rgba(212, 102, 91, 0.6);
+}

@@ -1,5 +1,22 @@
 import { test, expect } from '@playwright/test';
 
+// Attend la fin du défilement doux : l'élément visé doit être à l'écran et ne plus bouger.
+// Le défilement est plus lent quand la machine est chargée, d'où cette attente active.
+async function settle(page: import('@playwright/test').Page, selector: string) {
+  const target = page.locator(selector).first();
+  let last = Number.NaN;
+  let stable = 0;
+  for (let i = 0; i < 80 && stable < 4; i++) {
+    const box = await target.boundingBox();
+    const view = page.viewportSize()!;
+    const visible = !!box && box.y >= 0 && box.y < view.height - 80;
+    const y = box ? Math.round(box.y) : Number.NaN;
+    stable = visible && y === last ? stable + 1 : 0;
+    last = y;
+    await page.waitForTimeout(120);
+  }
+}
+
 const title = 'Nostromo, dossiers de l’équipage';
 
 test('intro : démarrage du terminal, puis entrée sur le site', async ({
@@ -38,6 +55,8 @@ test('cartes : inclinaison 3D, dossier ouvert avec jauges, retour du focus', asy
   await page.getByRole('button', { name: 'DÉCOUVRIR' }).click();
   const card = page.locator('.al-card').first();
   await card.scrollIntoViewIfNeeded();
+  // Le défilement est doux : on attend qu'il soit fini avant de viser la carte.
+  await settle(page, '.al-card');
   const box = (await card.boundingBox())!;
   await page.mouse.move(box.x + box.width - 10, box.y + 10);
   await expect(card).toHaveAttribute('data-tilt', 'on');
@@ -151,7 +170,7 @@ test('détecteur : la sonde suit la souris et la distance s’affiche', async ({
   const tracker = page.locator('.al-trk');
   await expect(tracker).toBeVisible();
   await expect(tracker).toHaveAttribute('data-probe-x', 'none');
-  await page.waitForTimeout(1500);
+  await settle(page, '.al-trk-canvas');
   const canvas = page.locator('.al-trk-canvas');
   const box = (await canvas.boundingBox())!;
   await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5);
@@ -193,13 +212,16 @@ test('détecteur : clavier et impulsion avec recharge', async ({ page }) => {
   });
 });
 
+const GOOD_MESSAGE =
+  'Selon le règlement, vous devez assister un équipage en danger. Trois morts, je peux ramener un spécimen. Merci.';
+
 async function openTerminal(page: import('@playwright/test').Page) {
   await page.goto('/');
   await page.getByRole('button', { name: 'ENTER' }).click();
   await page.getByRole('button', { name: ':TERMINAL' }).click();
   const term = page.locator('.al-term');
   await expect(term).toHaveAttribute('data-phase', 'idle');
-  await page.waitForTimeout(1200);
+  await settle(page, '.al-term');
   await page.getByRole('button', { name: 'OUVRIR LA LIAISON' }).click();
   return term;
 }
@@ -222,19 +244,24 @@ test('terminal : une partie gagnée, au clavier puis à la souris', async ({
 }) => {
   const term = await openTerminal(page);
   await expect(term).toHaveAttribute('data-phase', 'typing');
-  await expect(term).toHaveAttribute('data-signal', '5');
+  await expect(term).toHaveAttribute('data-signal', '6');
   await answer(page, null);
   await expect(term).toHaveAttribute('data-phase', 'choice');
   await page.keyboard.press('1'); // matricule et rapport complet
-  await expect(term).toHaveAttribute('data-signal', '4');
+  await expect(term).toHaveAttribute('data-signal', '5');
   await answer(page, /Décrire la créature telle qu/);
   await answer(page, /Proposer de livrer un spécimen/);
   await answer(page, /confirmation écrite/);
+  await answer(page, null);
+  await expect(term).toHaveAttribute('data-phase', 'write');
+  await page.getByLabel('Ton message à la Compagnie').fill(GOOD_MESSAGE);
+  await page.getByRole('button', { name: 'ENVOYER' }).click();
   await page.getByRole('button', { name: /PASSER L’ANIMATION/ }).click();
   await expect(term).toHaveAttribute('data-phase', 'win');
+  await expect(term).toContainText('RÉFÉRENCE AU RÈGLEMENT NOTÉE');
   await expect(term).toContainText('RÉSULTAT : AIDE ACCEPTÉE');
   await page.getByRole('button', { name: 'REJOUER' }).click();
-  await expect(term).toHaveAttribute('data-signal', '5');
+  await expect(term).toHaveAttribute('data-signal', '6');
   await expect(term).toHaveAttribute('data-phase', 'typing');
 });
 
@@ -244,8 +271,13 @@ test('terminal : une partie perdue, la Compagnie refuse', async ({ page }) => {
   await answer(page, /Insister, plus fort/);
   await answer(page, /aidez-nous/);
   await answer(page, /Demander une équipe de secours/);
+  await answer(page, null);
+  await expect(term).toHaveAttribute('data-phase', 'write');
+  await page.getByLabel('Ton message à la Compagnie').fill('aidez');
+  await page.getByRole('button', { name: 'ENVOYER' }).click();
   await page.getByRole('button', { name: /PASSER L’ANIMATION/ }).click();
   await expect(term).toHaveAttribute('data-phase', 'lose');
+  await expect(term).toContainText('MESSAGE TROP COURT');
   await expect(term).toContainText('RÉSULTAT : DEMANDE REFUSÉE');
   await expect(page.getByRole('button', { name: 'REJOUER' })).toBeVisible();
 });
@@ -260,4 +292,92 @@ test('terminal : le journal est annoncé et les jauges sont lisibles', async ({
   await expect(page.getByRole('log')).toContainText(
     'Comment ouvres-tu ton message',
   );
+});
+
+test('terminal : écrire son propre argument, message vide refusé', async ({
+  page,
+}) => {
+  const term = await openTerminal(page);
+  await answer(page, /matricule/);
+  await answer(page, /Décrire la créature telle qu/);
+  await answer(page, /Écrire toi-même ton argument/);
+  await answer(page, null);
+  await expect(term).toHaveAttribute('data-phase', 'write');
+  const field = page.getByLabel('Ton message à la Compagnie');
+  await expect(field).toBeFocused();
+  const send = page.getByRole('button', { name: 'ENVOYER' });
+  await expect(send).toBeDisabled();
+  await field.fill('   ');
+  await expect(send).toBeDisabled();
+  // Les chiffres tapés dans le champ n'activent pas les choix.
+  await field.fill('1');
+  await expect(term).toHaveAttribute('data-phase', 'write');
+  await field.fill(
+    'Le règlement impose une assistance à un équipage en détresse.',
+  );
+  await page.keyboard.press('Control+Enter');
+  await answer(page, null);
+  await expect(term).toContainText('RÉFÉRENCE AU RÈGLEMENT NOTÉE');
+  await expect(term).toHaveAttribute('data-signal', '2');
+  await expect(term).toHaveAttribute('data-phase', 'choice');
+});
+
+test('détecteur : rester collé à un contact fait perdre, puis on relance', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'ENTER' }).click();
+  await page.getByRole('button', { name: ':DÉTECTEUR' }).click();
+  await settle(page, '.al-trk-canvas');
+  const tracker = page.locator('.al-trk');
+  const canvas = page.locator('.al-trk-canvas');
+  const box = (await canvas.boundingBox())!;
+  await expect(tracker).toHaveAttribute('data-lost', 'false');
+  // On pose la sonde sur le contact le plus proche, en le suivant s'il bouge.
+  const follow = async () => {
+    const raw = (await tracker.getAttribute('data-contacts')) ?? '[]';
+    const [cx, cy] = (JSON.parse(raw) as [number, number][])[0];
+    await page.mouse.move(
+      box.x + (cx * box.width) / 560,
+      box.y + (cy * box.height) / 480,
+    );
+  };
+  await expect
+    .poll(
+      async () => {
+        await follow();
+        return tracker.getAttribute('data-lost');
+      },
+      { timeout: 15000, intervals: [150] },
+    )
+    .toBe('true');
+  await expect(page.getByRole('alert')).toContainText(
+    'CONTACT. LIAISON PERDUE.',
+  );
+  await expect(page.locator('.al-trk-caption')).toContainText('Liaison perdue');
+  await page.getByRole('button', { name: 'RELANCER' }).click();
+  await expect(tracker).toHaveAttribute('data-lost', 'false');
+  await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
+test('détecteur : un passage rapide près d’un contact ne fait pas perdre', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'ENTER' }).click();
+  await page.getByRole('button', { name: ':DÉTECTEUR' }).click();
+  await settle(page, '.al-trk-canvas');
+  const tracker = page.locator('.al-trk');
+  const box = (await page.locator('.al-trk-canvas').boundingBox())!;
+  const raw = (await tracker.getAttribute('data-contacts')) ?? '[]';
+  const [cx, cy] = (JSON.parse(raw) as [number, number][])[0];
+  await page.mouse.move(
+    box.x + (cx * box.width) / 560,
+    box.y + (cy * box.height) / 480,
+  );
+  await page.waitForTimeout(400);
+  await page.mouse.move(box.x + 5, box.y + 5);
+  await page.waitForTimeout(3500);
+  await expect(tracker).toHaveAttribute('data-lost', 'false');
+  expect(Number(await tracker.getAttribute('data-danger'))).toBeLessThan(0.5);
 });

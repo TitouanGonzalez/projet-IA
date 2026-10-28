@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   APEX,
+  DANGER_M,
+  DANGER_TIME,
   HALF,
   RADIUS,
   beepEvery,
@@ -9,6 +11,7 @@ import {
   classify,
   clampToFan,
   insideFan,
+  isLost,
   makeContacts,
   meters,
   nearest,
@@ -16,6 +19,7 @@ import {
   stepContacts,
   sweepAngle,
   toXY,
+  updateDanger,
 } from '../app/shared/tracker.js';
 
 const seeded = (seed = 7) => {
@@ -107,4 +111,39 @@ test('le bip accélère et monte quand on s’approche', () => {
   assert.equal(classify(2), 'close');
   assert.equal(classify(7), 'suspect');
   assert.equal(classify(25), 'far');
+});
+
+test('les contacts se rapprochent de la sonde sans la dépasser', () => {
+  const rng = seeded(11);
+  const probe = toXY(0.5, 0);
+  let cs = [{ r: 0.9, a: 0.5, vr: 0, va: 0, seen: 0 }];
+  const before = meters(probe, cs[0]);
+  for (let i = 0; i < 100; i++) cs = stepContacts(cs, 0.05, rng, probe);
+  assert.ok(meters(probe, cs[0]) < before);
+  for (let i = 0; i < 2000; i++) cs = stepContacts(cs, 0.05, rng, probe);
+  assert.ok(meters(probe, cs[0]) < 0.5);
+  assert.ok(cs[0].r >= 0.12 && cs[0].r <= 0.95 && Math.abs(cs[0].a) <= HALF);
+  // Sans sonde, aucune attraction : un contact immobile reste en place.
+  const still = [{ r: 0.5, a: 0, vr: 0, va: 0, seen: 0 }];
+  const moved = stepContacts(still, 1, () => 1, null);
+  assert.equal(moved[0].r, 0.5);
+});
+
+test('le danger monte près d’un contact, retombe quand on s’éloigne, et fait perdre', () => {
+  assert.equal(updateDanger(0, 1, 1), 1);
+  assert.equal(updateDanger(1, 10, 0.5), 0.25);
+  assert.equal(updateDanger(1, null, 5), 0);
+  assert.equal(updateDanger(0, DANGER_M, 1), 0);
+  let level = 0;
+  let t = 0;
+  while (!isLost(level) && t < 20) {
+    level = updateDanger(level, 1, 0.1);
+    t += 0.1;
+  }
+  assert.ok(Math.abs(t - DANGER_TIME) < 0.2, `perdu après ${t.toFixed(1)} s`);
+  // Une courte visite ne fait pas perdre.
+  let brief = updateDanger(0, 1, 1);
+  brief = updateDanger(brief, 20, 2);
+  assert.equal(isLost(brief), false);
+  assert.equal(updateDanger(DANGER_TIME + 5, 1, 1), DANGER_TIME);
 });

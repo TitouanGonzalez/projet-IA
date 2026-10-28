@@ -16,6 +16,8 @@ export interface Node {
   lines: string[];
   prompt: string;
   choices: Choice[];
+  // Nœud à saisie libre : le joueur écrit son message, et le texte est analysé.
+  free?: { next: string; hint: string; placeholder: string };
 }
 export interface Ending {
   result: 'win' | 'lose';
@@ -31,14 +33,14 @@ export interface GameState {
   ending?: string;
 }
 
-export const START_SIGNAL = 5;
+export const START_SIGNAL = 6;
 export const MAX_HEAT = 4;
 
 export const intro = {
   speaker: 'mother' as const,
   lines: [
     'LIAISON LONGUE PORTÉE ÉTABLIE.',
-    'DÉLAI D’ÉCHANGE : 14 MINUTES PAR MESSAGE. SIGNAL RESTANT : 5 MESSAGES.',
+    'DÉLAI D’ÉCHANGE : 14 MINUTES PAR MESSAGE. SIGNAL RESTANT : 6 MESSAGES.',
     'Un organisme hostile est à bord et l’équipage tombe un à un. Tu es la seule personne en état d’écrire à la Compagnie.',
     'Elle ne répond qu’aux messages conformes. Convaincs-la d’envoyer de l’aide avant la fin du signal.',
   ],
@@ -165,6 +167,10 @@ export const nodes: Record<string, Node> = {
         next: 'menace',
         effects: { heat: 2 },
       },
+      {
+        label: 'Écrire toi-même ton argument.',
+        next: 'libre_arg',
+      },
     ],
   },
   avarie: {
@@ -239,6 +245,34 @@ export const nodes: Record<string, Node> = {
       },
     ],
   },
+  libre_arg: {
+    speaker: 'company',
+    lines: [
+      'ARGUMENTAIRE LIBRE ACCEPTÉ.',
+      'FORMULER L’ARGUMENT AVEC TES PROPRES MOTS.',
+    ],
+    prompt: 'Écris ton argument à la Compagnie.',
+    choices: [],
+    free: {
+      next: 'reglement',
+      hint: 'Elle lit les faits précis, le règlement et la politesse. Elle n’aime ni les cris ni les menaces.',
+      placeholder: 'Écris ton argument (280 caractères au plus)',
+    },
+  },
+  plaidoirie: {
+    speaker: 'company',
+    lines: [
+      'DERNIÈRE OCCASION DE PRÉCISER TA DEMANDE.',
+      'LE SIGNAL NE TIENDRA PLUS QU’UN MESSAGE.',
+    ],
+    prompt: 'Rédige toi-même ton dernier message à la Compagnie.',
+    choices: [],
+    free: {
+      next: 'verdict',
+      hint: 'Elle lit les faits précis, le règlement et la politesse. Elle n’aime ni les cris ni les menaces.',
+      placeholder: 'Écris ton message (280 caractères au plus)',
+    },
+  },
   marche: {
     speaker: 'company',
     lines: [
@@ -251,17 +285,17 @@ export const nodes: Record<string, Node> = {
       {
         label:
           'Accepter les conditions : le spécimen d’abord, l’équipage ensuite.',
-        next: 'verdict',
+        next: 'plaidoirie',
         effects: { value: 1 },
       },
       {
         label: 'Exiger que l’équipage soit évacué en premier.',
-        next: 'verdict',
+        next: 'plaidoirie',
         effects: { cred: 1, value: -1 },
       },
       {
         label: 'Demander une confirmation écrite avant tout engagement.',
-        next: 'verdict',
+        next: 'plaidoirie',
         effects: { cred: 1 },
       },
     ],
@@ -276,17 +310,17 @@ export const nodes: Record<string, Node> = {
     choices: [
       {
         label: 'Rappeler que la cargaison, c’est aussi la créature.',
-        next: 'verdict',
+        next: 'plaidoirie',
         effects: { value: 1 },
       },
       {
         label: 'Joindre l’état de santé de l’équipage en pièce jointe.',
-        next: 'verdict',
+        next: 'plaidoirie',
         effects: { cred: 1 },
       },
       {
         label: 'Dire que le règlement les oblige à répondre.',
-        next: 'verdict',
+        next: 'plaidoirie',
         effects: { heat: 1 },
       },
     ],
@@ -301,12 +335,12 @@ export const nodes: Record<string, Node> = {
     choices: [
       {
         label: 'Retirer la menace et présenter des excuses.',
-        next: 'verdict',
+        next: 'plaidoirie',
         effects: { heat: -1 },
       },
       {
         label: 'Maintenir la menace et exiger une réponse.',
-        next: 'verdict',
+        next: 'plaidoirie',
         effects: { heat: 1 },
       },
     ],
@@ -318,12 +352,12 @@ export const nodes: Record<string, Node> = {
     choices: [
       {
         label: 'Joindre les enregistrements de bord comme preuve.',
-        next: 'verdict',
+        next: 'plaidoirie',
         effects: { cred: 2 },
       },
       {
         label: 'Supplier encore une fois.',
-        next: 'verdict',
+        next: 'plaidoirie',
       },
     ],
   },
@@ -334,7 +368,7 @@ export const nodes: Record<string, Node> = {
     choices: [
       {
         label: 'Insister : il y a un organisme à bord.',
-        next: 'verdict',
+        next: 'plaidoirie',
         effects: { cred: -1, value: 1 },
       },
       {
@@ -353,11 +387,11 @@ export const nodes: Record<string, Node> = {
     choices: [
       {
         label: 'Demander une équipe de secours.',
-        next: 'verdict',
+        next: 'plaidoirie',
       },
       {
         label: 'Décrire la créature en détail.',
-        next: 'verdict',
+        next: 'plaidoirie',
         effects: { cred: 1, value: 1 },
       },
     ],
@@ -443,7 +477,7 @@ export function choose(state: GameState, index: number): GameState {
     ...state,
     cred: state.cred + (e.cred ?? 0),
     value: state.value + (e.value ?? 0),
-    heat: state.heat + (e.heat ?? 0),
+    heat: Math.max(0, state.heat + (e.heat ?? 0)),
     signal: state.signal - 1,
   };
   if (choice.next.startsWith('end:'))
@@ -453,4 +487,107 @@ export function choose(state: GameState, index: number): GameState {
     return { ...next, ending: resolveVerdict(next) };
   if (next.signal <= 0) return { ...next, ending: 'coupure' };
   return { ...next, node: choice.next };
+}
+
+export const MAX_TEXT = 280;
+
+interface Rule {
+  re: RegExp;
+  effects: Effects;
+  note: string;
+}
+// La Compagnie lit le texte libre par mots-clés : pas d'intelligence artificielle, des règles lisibles.
+const rules: Rule[] = [
+  {
+    re: / (reglement|article|protocole|procedure|assistance|obligation|contrat|clause|devoir)\w* /,
+    effects: { cred: 1 },
+    note: 'RÉFÉRENCE AU RÈGLEMENT NOTÉE.',
+  },
+  {
+    re: / (mort|blesse|victime|survivant|equipage|perdu|disparu|nostromo|cadavre)\w* /,
+    effects: { cred: 1 },
+    note: 'FAITS SUR L’ÉQUIPAGE NOTÉS.',
+  },
+  {
+    re: / (specimen|echantillon|ramener|capturer|recuper|valeur|etude|scientifique|benefice|profit)\w* /,
+    effects: { value: 1 },
+    note: 'OFFRE DE RÉCUPÉRATION NOTÉE.',
+  },
+  {
+    re: / (merci|svp|cordialement|respectueusement|prie|plait)\w* /,
+    effects: { heat: -1 },
+    note: 'FORMULE DE POLITESSE NOTÉE.',
+  },
+  {
+    re: / (menace|presse|journal|tuer|connard|salaud|idiot|incompeten|payer|avocat|proces)\w* /,
+    effects: { heat: 2 },
+    note: 'TON HOSTILE DÉTECTÉ.',
+  },
+];
+
+// Met le texte en minuscules sans accents, mots séparés par un seul espace, cernés d'espaces.
+function plain(text: string): string {
+  const words = text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+  return ` ${words} `;
+}
+
+export function analyze(text: string): {
+  effects: Required<Effects>;
+  notes: string[];
+} {
+  const clean = text.trim().slice(0, MAX_TEXT);
+  const found = { cred: 0, value: 0, heat: 0 };
+  const notes: string[] = [];
+  const padded = plain(clean);
+  for (const r of rules) {
+    if (!r.re.test(padded)) continue;
+    found.cred += r.effects.cred ?? 0;
+    found.value += r.effects.value ?? 0;
+    found.heat += r.effects.heat ?? 0;
+    notes.push(r.note);
+  }
+  const letters = clean.replace(/[^A-Za-zÀ-ÿ]/g, '');
+  const upper = letters.replace(/[^A-ZÀ-Þ]/g, '');
+  if (letters.length >= 12 && upper.length / letters.length > 0.6) {
+    found.heat += 1;
+    notes.push('MESSAGE EN MAJUSCULES.');
+  }
+  if (letters.length < 15) {
+    found.cred -= 1;
+    notes.push('MESSAGE TROP COURT.');
+  }
+  // Une seule phrase ne suffit pas à tout gagner : le gain est plafonné.
+  found.cred = Math.min(2, found.cred);
+  found.value = Math.min(2, found.value);
+  if (notes.length === 0)
+    notes.push('MESSAGE REÇU. AUCUN ÉLÉMENT EXPLOITABLE.');
+  return { effects: found, notes };
+}
+
+export function submit(
+  state: GameState,
+  text: string,
+): { state: GameState; notes: string[] } {
+  const node = nodes[state.node];
+  const clean = text.trim().slice(0, MAX_TEXT);
+  if (state.ending || !node?.free || !clean) return { state, notes: [] };
+  const { effects, notes } = analyze(clean);
+  const next: GameState = {
+    ...state,
+    cred: state.cred + effects.cred,
+    value: state.value + effects.value,
+    heat: Math.max(0, state.heat + effects.heat),
+    signal: state.signal - 1,
+  };
+  if (next.heat >= MAX_HEAT)
+    return { state: { ...next, ending: 'banni' }, notes };
+  if (node.free.next === 'verdict')
+    return { state: { ...next, ending: resolveVerdict(next) }, notes };
+  if (next.signal <= 0) return { state: { ...next, ending: 'coupure' }, notes };
+  return { state: { ...next, node: node.free.next }, notes };
 }

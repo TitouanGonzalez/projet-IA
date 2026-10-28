@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   MAX_HEAT,
+  MAX_TEXT,
   START_SIGNAL,
   choose,
   endings,
   intro,
   nodes,
   start,
+  submit,
   type GameState,
 } from '../../shared/terminal.js';
 
@@ -39,6 +41,9 @@ function nodeEntries(id: string): Entry[] {
   return [
     ...n.lines.map((l) => entry(n.speaker, label(n.speaker) + l)),
     entry('mother', label('mother') + n.prompt),
+    ...(n.free
+      ? [entry('mother', `${label('mother')}Astuce : ${n.free.hint}`)]
+      : []),
   ];
 }
 function endEntries(id: string): Entry[] {
@@ -142,7 +147,11 @@ export default function MuthurTerminal({
       ? 'typing'
       : ending
         ? ending.result
-        : 'choice';
+        : nodes[game.node]?.free
+          ? 'write'
+          : 'choice';
+  const [draft, setDraft] = useState('');
+  const field = useRef<HTMLTextAreaElement>(null);
 
   const beepFn = useRef(beep);
   useEffect(() => {
@@ -177,6 +186,27 @@ export default function MuthurTerminal({
         400,
       );
   };
+  // Envoie le message écrit par le joueur : la Compagnie le lit et réagit.
+  const send = () => {
+    const text = draft.trim().slice(0, MAX_TEXT);
+    if (!text || game.ending || !nodes[game.node]?.free) return;
+    const { state: after, notes } = submit(game, text);
+    const added = [
+      entry('you', `> ${text}`),
+      ...notes.map((n) => entry('company', label('company') + n)),
+      ...(after.ending ? endEntries(after.ending) : nodeEntries(after.node)),
+    ];
+    sfx('click');
+    setDraft('');
+    setGame(after);
+    setEntries((old) => [...old, ...added]);
+    if (calm.current) setShown((s) => s + added.length);
+    if (after.ending)
+      window.setTimeout(
+        () => sfx(endings[after.ending!].result === 'win' ? 'open' : 'close'),
+        400,
+      );
+  };
   const skip = () => setShown(entries.length);
 
   // Toujours montrer la fin du journal.
@@ -187,11 +217,21 @@ export default function MuthurTerminal({
 
   // Garde le focus utile quand les choix, ou le bouton rejouer, apparaissent.
   useEffect(() => {
-    if (phase !== 'choice' && phase !== 'win' && phase !== 'lose') return;
+    if (
+      phase !== 'choice' &&
+      phase !== 'win' &&
+      phase !== 'lose' &&
+      phase !== 'write'
+    )
+      return;
     const root = wrap.current;
     if (!root) return;
     const active = document.activeElement;
     if (active && active !== document.body && !root.contains(active)) return;
+    if (phase === 'write') {
+      field.current?.focus();
+      return;
+    }
     root
       .querySelector<HTMLButtonElement>(
         '.al-term-choices button, .al-term-replay',
@@ -285,6 +325,40 @@ export default function MuthurTerminal({
             ))}
           </ol>
         )}
+        {phase === 'write' && (
+          <form
+            className="al-term-write"
+            onSubmit={(e) => {
+              e.preventDefault();
+              send();
+            }}
+          >
+            <label htmlFor="al-term-field">Ton message à la Compagnie</label>
+            <textarea
+              id="al-term-field"
+              ref={field}
+              rows={3}
+              maxLength={MAX_TEXT}
+              value={draft}
+              placeholder={nodes[game.node].free?.placeholder}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                  e.preventDefault();
+                  send();
+                }
+              }}
+            />
+            <div className="al-term-write-row">
+              <span aria-hidden="true">
+                {draft.length}/{MAX_TEXT}
+              </span>
+              <button type="submit" className="al-btn" disabled={!draft.trim()}>
+                ENVOYER
+              </button>
+            </div>
+          </form>
+        )}
         {(phase === 'win' || phase === 'lose') && (
           <button
             type="button"
@@ -296,7 +370,9 @@ export default function MuthurTerminal({
         )}
       </div>
       <p className="al-term-hint" aria-hidden="true">
-        Touches 1 à 3 pour répondre. Espace pour accélérer le texte.
+        {phase === 'write'
+          ? 'Écris ta réponse, puis Ctrl + Entrée ou le bouton pour l’envoyer.'
+          : 'Touches 1 à 4 pour répondre. Espace pour accélérer le texte.'}
       </p>
     </div>
   );

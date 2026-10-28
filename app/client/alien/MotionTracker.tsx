@@ -7,8 +7,10 @@ import {
   TRK_W,
   beepEvery,
   beepPitch,
+  DANGER_TIME,
   classify,
   clampToFan,
+  isLost,
   makeContacts,
   nearest,
   proximityText,
@@ -16,6 +18,7 @@ import {
   stepContacts,
   sweepAngle,
   toXY,
+  updateDanger,
   type Contact,
   type Point,
   type Proximity,
@@ -52,6 +55,7 @@ function draw(
     dir: number;
     probe: Point | null;
     calm: boolean;
+    danger: number;
   },
 ) {
   const { lit, accent } = look;
@@ -148,7 +152,8 @@ function draw(
   if (state.probe) {
     const { x, y } = state.probe;
     ctx.globalAlpha = 1;
-    ctx.strokeStyle = '#f3e9d2';
+    const d = Math.min(1, state.danger / DANGER_TIME);
+    ctx.strokeStyle = `rgb(${Math.round(243 - 31 * d)}, ${Math.round(233 - 131 * d)}, ${Math.round(210 - 119 * d)})`;
     ctx.lineWidth = 1.6;
     ctx.beginPath();
     ctx.arc(x, y, 12, 0, Math.PI * 2);
@@ -193,9 +198,11 @@ function draw(
 export default function MotionTracker({
   beep,
   onPing,
+  onLose,
 }: {
   beep: (freq: number) => void;
   onPing: () => void;
+  onLose: () => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -210,12 +217,21 @@ export default function MotionTracker({
   const charge = useRef(1);
   const pingUntil = useRef(0);
   const proxRef = useRef<Proximity>('far');
-  const callbacks = useRef({ beep, onPing });
+  const danger = useRef(0);
+  const alive = useRef(0);
+  const lost = useRef(false);
+  const dangerBar = useRef<HTMLElement>(null);
+  const clock = useRef<HTMLSpanElement>(null);
+  const warnRef = useRef(false);
+  const callbacks = useRef({ beep, onPing, onLose });
   const [prox, setProx] = useState<Proximity>('far');
+  const [warn, setWarn] = useState(false);
+  const [over, setOver] = useState(false);
+  const [best, setBest] = useState(0);
 
   useEffect(() => {
-    callbacks.current = { beep, onPing };
-  }, [beep, onPing]);
+    callbacks.current = { beep, onPing, onLose };
+  }, [beep, onPing, onLose]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -235,37 +251,57 @@ export default function MotionTracker({
     const loop = (now: number) => {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
-      time.current += dt;
+      const playing = !lost.current;
+      const p = probe.current;
+      if (playing) {
+        time.current += dt;
+        alive.current += dt;
+      }
       const t = time.current;
       const sweep = sweepAngle(t, calm ? 12 : 5);
       if (sweep !== lastSweep) dir = sweep > lastSweep ? 1 : -1;
-      contacts.current = reveal(
-        stepContacts(contacts.current, dt, Math.random),
-        lastSweep,
-        sweep,
-        t < pingUntil.current,
-      );
+      if (playing) {
+        contacts.current = reveal(
+          stepContacts(contacts.current, dt, Math.random, p),
+          lastSweep,
+          sweep,
+          t < pingUntil.current,
+        );
+        charge.current = Math.min(1, charge.current + dt / 4);
+      }
       lastSweep = sweep;
-      charge.current = Math.min(1, charge.current + dt / 4);
-
-      const p = probe.current;
       const wrap = wrapRef.current;
       let category: Proximity = 'far';
       if (p) {
         const n = nearest(contacts.current, p);
         if (n) {
+          if (playing) {
+            danger.current = updateDanger(danger.current, n.meters, dt);
+            if (isLost(danger.current)) {
+              lost.current = true;
+              setOver(true);
+              setBest((b) => Math.max(b, Math.floor(alive.current)));
+              callbacks.current.onLose();
+            }
+          }
           category = classify(n.meters);
           if (readout.current)
             readout.current.textContent = n.meters.toFixed(2).padStart(5, '0');
           if (wrap) wrap.dataset.nearest = n.meters.toFixed(1);
-          if (t - lastBeep >= beepEvery(n.meters)) {
+          if (playing && t - lastBeep >= beepEvery(n.meters)) {
             lastBeep = t;
             callbacks.current.beep(beepPitch(n.meters));
           }
         }
       } else {
+        if (playing) danger.current = updateDanger(danger.current, null, dt);
         if (readout.current) readout.current.textContent = '--.--';
         if (wrap) wrap.dataset.nearest = 'none';
+      }
+      const warning = !lost.current && danger.current > 0.25;
+      if (warning !== warnRef.current) {
+        warnRef.current = warning;
+        setWarn(warning);
       }
       if (category !== proxRef.current) {
         proxRef.current = category;
@@ -275,6 +311,22 @@ export default function MotionTracker({
         wrap.dataset.probeX = p ? String(Math.round(p.x)) : 'none';
         wrap.dataset.probeY = p ? String(Math.round(p.y)) : 'none';
         wrap.dataset.charge = charge.current.toFixed(2);
+        wrap.dataset.danger = danger.current.toFixed(2);
+        wrap.dataset.lost = String(lost.current);
+        wrap.dataset.alive = alive.current.toFixed(1);
+        // Positions des contacts, pour les tests et le débogage.
+        wrap.dataset.contacts = JSON.stringify(
+          contacts.current.map((c) => {
+            const q = toXY(c.r, c.a);
+            return [Math.round(q.x), Math.round(q.y)];
+          }),
+        );
+      }
+      if (dangerBar.current)
+        dangerBar.current.style.width = `${Math.min(100, (danger.current / DANGER_TIME) * 100)}%`;
+      if (clock.current) {
+        const sec = Math.floor(alive.current);
+        clock.current.textContent = `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
       }
       if (box1.current)
         box1.current.textContent = String(
@@ -290,6 +342,7 @@ export default function MotionTracker({
         dir,
         probe: p,
         calm,
+        danger: danger.current,
       });
       raf = requestAnimationFrame(loop);
     };
@@ -304,8 +357,20 @@ export default function MotionTracker({
       y: ((e.clientY - r.top) * TRK_H) / r.height,
     };
   };
+  const restart = () => {
+    contacts.current = makeContacts(Math.random, 4);
+    danger.current = 0;
+    alive.current = 0;
+    charge.current = 1;
+    pingUntil.current = 0;
+    lost.current = false;
+    setOver(false);
+    setWarn(false);
+    warnRef.current = false;
+    canvasRef.current?.focus();
+  };
   const ping = () => {
-    if (charge.current < 1) return;
+    if (lost.current || charge.current < 1) return;
     charge.current = 0;
     pingUntil.current = time.current + 1.4;
     callbacks.current.onPing();
@@ -365,6 +430,29 @@ export default function MotionTracker({
           <span className="al-trk-tag al-trk-tag-top" aria-hidden="true">
             -CN
           </span>
+          <div className="al-trk-time" aria-hidden="true">
+            <span>
+              TEMPS <b ref={clock}>00:00</b>
+            </span>
+            <span className="al-trk-danger">
+              DANGER
+              <em>
+                <i ref={dangerBar} />
+              </em>
+            </span>
+          </div>
+          {over && (
+            <div className="al-trk-lost" role="alert">
+              <p>CONTACT. LIAISON PERDUE.</p>
+              <p>
+                Tu as tenu {Math.floor(alive.current)} s. Meilleur temps :{' '}
+                {best} s.
+              </p>
+              <button type="button" className="al-btn" onClick={restart}>
+                RELANCER
+              </button>
+            </div>
+          )}
           <div className="al-trk-boxes" aria-hidden="true">
             <span ref={box1}>0</span>
             <span ref={box2}>9</span>
@@ -394,7 +482,11 @@ export default function MotionTracker({
         </div>
       </div>
       <p className="al-trk-caption" role="status">
-        {proximityText[prox]}
+        {over
+          ? 'Contact. Liaison perdue. Relance une partie.'
+          : warn
+            ? 'Danger : le contact est sur toi, recule.'
+            : proximityText[prox]}
       </p>
     </div>
   );
