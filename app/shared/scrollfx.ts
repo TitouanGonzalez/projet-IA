@@ -91,17 +91,20 @@ export interface Timeline {
   ends: number[]; // défilement auquel elle commence à repartir
   reads: number[]; // hauteur de contenu à faire défiler à l'intérieur de la scène
   shifts: number[]; // décalage pour centrer les scènes plus basses que l'écran
-  gate: number; // longueur de défilement d'un passage entre deux scènes
+  gate: number; // longueur de défilement pour qu'une scène parte, ou pour que la suivante arrive
+  gap: number; // vide entre les deux, où l'on ne voit que le couloir
   total: number; // hauteur totale à donner à la page
 }
 
 const HOLD_FIRST = 0.35;
 const HOLD = 0.2;
 const HOLD_LAST = 0.1;
-export const GATE = 0.8;
+export const GATE = 0.7;
+export const GAP = 0.6;
 
 export function buildTimeline(heights: number[], vh: number): Timeline {
   const gate = GATE * vh;
+  const gap = GAP * vh;
   const starts: number[] = [];
   const ends: number[] = [];
   const reads: number[] = [];
@@ -116,10 +119,10 @@ export function buildTimeline(heights: number[], vh: number): Timeline {
     shifts.push(h < vh ? (vh - h) / 2 : 0);
     const end = cursor + read + hold;
     ends.push(end);
-    cursor = end + gate;
+    cursor = end + 2 * gate + gap;
   });
   const last = ends.length > 0 ? ends[ends.length - 1] : 0;
-  return { starts, ends, reads, shifts, gate, total: last + vh };
+  return { starts, ends, reads, shifts, gate, gap, total: last + vh };
 }
 
 export interface ScenePose {
@@ -136,7 +139,9 @@ const smooth = (n: number): number => n * n * (3 - 2 * n);
 
 export function scenePose(i: number, y: number, t: Timeline): ScenePose {
   const gate = t.gate > 0 ? t.gate : 1;
-  const entering = i === 0 ? 1 : smooth(clamp01((y - t.ends[i - 1]) / gate));
+  // La scène précédente part, puis un vide, puis celle-ci arrive : jamais deux scènes en même temps.
+  const entering =
+    i === 0 ? 1 : smooth(clamp01((y - t.ends[i - 1] - gate - t.gap) / gate));
   const leaving =
     i === t.ends.length - 1 ? 0 : smooth(clamp01((y - t.ends[i]) / gate));
   return {
@@ -157,7 +162,10 @@ export function activeScene(y: number, t: Timeline): number {
     const p = scenePose(i, y, t);
     if (p.entering >= 0.5 && p.leaving < 0.5) return i;
   }
-  return 0;
+  // Dans le vide entre deux scènes : on garde la dernière scène quittée.
+  let last = 0;
+  for (let i = 0; i < t.starts.length; i++) if (t.starts[i] <= y) last = i;
+  return last;
 }
 
 // Défilement à atteindre pour amener un élément (à elTop pixels du haut de sa scène) sous

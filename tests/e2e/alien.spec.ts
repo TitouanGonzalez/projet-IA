@@ -916,33 +916,50 @@ test('défilement : les scènes arrivent du fond du couloir puis se posent', asy
   expect(Number(behind.opacity)).toBe(0);
 });
 
-test('défilement : pendant un passage les scènes se croisent sans glisser', async ({
+test('défilement : une scène part, un vide, puis la suivante arrive, sans glisser', async ({
   page,
 }) => {
   await enterSite(page);
-  await page.evaluate(() => {
-    const d = document.getElementById('dossiers')!;
-    const gate = 0.8 * window.innerHeight;
-    window.scrollTo({
-      top: Number(d.dataset.start) - gate / 2,
-      behavior: 'instant',
-    });
-  });
+  // Position de défilement relative au début des dossiers, en hauteurs d'écran :
+  // la scène part sur 0,7 avant l'arrivée de la suivante, avec 0,6 de vide entre les deux.
+  const at = (vhOffset: number) =>
+    page.evaluate((k) => {
+      const d = document.getElementById('dossiers')!;
+      window.scrollTo({
+        top: Number(d.dataset.start) + k * window.innerHeight,
+        behavior: 'instant',
+      });
+    }, vhOffset);
+
+  // Départ de l'accueil : il fonce vers nous en s'effaçant, les dossiers sont encore loin.
+  await at(-1.9);
+  await expect
+    .poll(async () => (await poseOf(page, 'accueil')).transform)
+    .toMatch(/scale\(1\.\d+\)/);
+  const leaving = await poseOf(page, 'accueil');
+  expect(Number(leaving.opacity)).toBeGreaterThan(0);
+  expect(Number(leaving.opacity)).toBeLessThan(1);
+  expect(Number((await poseOf(page, 'dossiers')).opacity)).toBe(0);
+  expect(leaving.position).toBe('fixed');
+  expect(leaving.events).toBe('none');
+
+  // Dans le vide : plus aucune scène visible, seul le couloir reste.
+  await at(-1.0);
+  await expect
+    .poll(async () => Number((await poseOf(page, 'accueil')).opacity))
+    .toBe(0);
+  expect(Number((await poseOf(page, 'dossiers')).opacity)).toBe(0);
+
+  // Arrivée des dossiers : ils surgissent du fond, petits et transparents, pas encore cliquables.
+  await at(-0.35);
   await expect
     .poll(async () => Number((await poseOf(page, 'dossiers')).opacity))
-    .toBeGreaterThan(0.2);
-  const hero = await poseOf(page, 'accueil');
+    .toBeGreaterThan(0);
   const next = await poseOf(page, 'dossiers');
-  // L'accueil fonce vers nous en s'effaçant, les dossiers surgissent du fond.
-  expect(Number(hero.opacity)).toBeGreaterThan(0);
-  expect(Number(hero.opacity)).toBeLessThan(1);
   expect(Number(next.opacity)).toBeLessThan(1);
-  expect(hero.transform).toMatch(/scale\(1\.\d+\)/);
   expect(next.transform).toMatch(/scale\(0\.\d+\)/);
-  expect(hero.position).toBe('fixed');
-  expect(next.position).toBe('fixed');
-  expect(hero.events).toBe('none');
   expect(next.events).toBe('none');
+  expect(Number((await poseOf(page, 'accueil')).opacity)).toBe(0);
 });
 
 test('défilement : le contenu long d’une scène se lit sur place', async ({

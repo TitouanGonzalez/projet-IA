@@ -131,7 +131,7 @@ test('scènes : le défilement total laisse lire la dernière scène', () => {
   assert.equal(tl.starts[0], 0);
   assert.equal(tl.starts.length, 4);
   for (let i = 1; i < 4; i++) {
-    assert.equal(tl.starts[i], tl.ends[i - 1] + tl.gate);
+    assert.equal(tl.starts[i], tl.ends[i - 1] + 2 * tl.gate + tl.gap);
     assert.ok(tl.starts[i] > tl.starts[i - 1]);
   }
   assert.equal(tl.total, tl.ends[3] + VH);
@@ -172,14 +172,22 @@ test('scènes : le contenu défile à l’intérieur, jamais au-delà', () => {
   assert.equal(scenePose(i, tl.starts[i] - 50, tl).offset, 0);
 });
 
-test('scènes : pendant un passage, l’une s’efface en grossissant et l’autre arrive', () => {
-  const y = tl.ends[1] + tl.gate / 2;
-  const out = scenePose(1, y, tl);
-  const into = scenePose(2, y, tl);
-  assert.ok(out.scale > 1 && out.opacity < 1 && out.opacity > 0);
-  assert.ok(into.scale < 1 && into.scale > 0.35 && into.opacity > 0);
+test('scènes : une scène part, puis un vide, puis la suivante arrive', () => {
+  const out = scenePose(1, tl.ends[1] + tl.gate / 2, tl);
+  assert.ok(out.scale > 1 && out.opacity > 0 && out.opacity < 1);
   assert.equal(out.interactive, false);
+  assert.equal(scenePose(2, tl.ends[1] + tl.gate / 2, tl).opacity, 0);
+  // Dans le vide : aucune scène visible, seul le couloir reste.
+  const yGap = tl.ends[1] + tl.gate + tl.gap / 2;
+  for (let k = 0; k < 4; k++)
+    assert.equal(scenePose(k, yGap, tl).opacity, 0, String(k));
+  // L'arrivée de la suivante.
+  const into = scenePose(2, tl.starts[2] - tl.gate / 2, tl);
+  assert.ok(
+    into.scale < 1 && into.scale > 0.35 && into.opacity > 0 && into.opacity < 1,
+  );
   assert.equal(into.interactive, false);
+  assert.equal(scenePose(1, tl.starts[2] - tl.gate / 2, tl).opacity, 0);
 });
 
 test('scènes : arrivée monotone, sans retour en arrière', () => {
@@ -204,6 +212,8 @@ test('scènes : la scène courante suit le défilement', () => {
   assert.equal(activeScene(tl.starts[1], tl), 1);
   assert.equal(activeScene(tl.starts[2] + 300, tl), 2);
   assert.equal(activeScene(tl.total, tl), 3);
+  // Dans le vide, la scène courante ne revient pas à l'accueil.
+  assert.equal(activeScene(tl.ends[2] + tl.gate + tl.gap / 2, tl), 2);
 });
 
 test('scènes : atteindre un élément reste dans les limites de sa scène', () => {
