@@ -1,0 +1,762 @@
+/* Page Nostromo : style terminal rétro-futuriste. Aucune animation ne clignote :
+   tout reste lent, et tout s'arrête si le système demande moins de mouvement. */
+.al-body {
+  background: #101010;
+}
+.al-root {
+  --ink: #f3e9d2;
+  --dim: rgba(243, 233, 210, 0.62);
+  --line: rgba(243, 233, 210, 0.3);
+  --bg: #121212;
+  --alert: #e5484d;
+  --mono: ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace;
+  --wide: 'Segoe UI Black', 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
+  /* Variables du design system, lues par le jeu d'esquive. */
+  --color-canvas: #151515;
+  --color-border: #5a5442;
+  --color-brand: #f3e9d2;
+  --color-brandHover: #fff6df;
+  --color-onBrand: #121212;
+  --color-danger: #e5484d;
+  --color-text: #f3e9d2;
+  --color-surface: #181818;
+  --color-muted: #cfc6b0;
+  --color-focus: #f3e9d2;
+  --font-family: var(--mono);
+  --font-body: 16px;
+  --font-heading: 28px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --radius-control: 0px;
+  position: relative;
+  min-height: 100vh;
+  overflow-x: hidden;
+  color: var(--ink);
+  background: radial-gradient(
+    ellipse at 50% 35%,
+    #202020 0%,
+    #121212 62%,
+    #0a0a0a 100%
+  );
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  line-height: 1.55;
+}
+.al-root h1,
+.al-root h2,
+.al-root p,
+.al-root ul {
+  margin: 0;
+}
+.al-root ul {
+  padding: 0;
+  list-style: none;
+}
+.al-root button:not(.ds-button) {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+.al-root button:not(.ds-button):hover {
+  background: none;
+}
+.al-root button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.al-root :focus-visible {
+  outline: 2px solid var(--alert);
+  outline-offset: 4px;
+}
+.al-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+@media (pointer: fine) {
+  .al-root,
+  .al-root * {
+    cursor: none !important;
+  }
+}
+
+/* Lignes de balayage et vignette, fixes et discrètes. */
+.al-scan {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.04) 0 1px,
+      transparent 1px 3px
+    ),
+    radial-gradient(
+      ellipse at center,
+      transparent 55%,
+      rgba(0, 0, 0, 0.55) 100%
+    );
+}
+.al-cursor {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 100;
+  color: var(--alert);
+  opacity: 0;
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px rgba(229, 72, 77, 0.7));
+}
+.al-cursor svg {
+  display: block;
+  transition: transform 0.15s;
+}
+.al-cursor.is-link svg {
+  transform: scale(1.4);
+}
+
+.al-root .al-logo,
+.al-root button.al-logo {
+  position: fixed;
+  top: 22px;
+  left: 28px;
+  z-index: 45;
+  font-family: var(--wide);
+  font-size: 28px;
+  letter-spacing: 0.05em;
+  color: transparent !important;
+  -webkit-text-stroke: 1px var(--ink);
+  text-shadow: 0 0 10px rgba(243, 233, 210, 0.5);
+}
+.al-root button.al-btn {
+  display: inline-block;
+  min-height: 46px;
+  padding: 12px 26px;
+  background: var(--ink) !important;
+  color: #121212 !important;
+  font-family: var(--wide);
+  font-size: 18px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  box-shadow: 0 0 18px rgba(243, 233, 210, 0.35);
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+.al-root button.al-btn:hover,
+.al-root button.al-btn:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 0 28px rgba(243, 233, 210, 0.6);
+}
+
+/* Écran d'entrée */
+.al-intro {
+  display: grid;
+  place-items: center;
+  height: 100vh;
+}
+.al-intro-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 36px;
+}
+.al-dish {
+  width: 64px;
+  height: 64px;
+  color: var(--ink);
+  filter: drop-shadow(0 0 6px rgba(243, 233, 210, 0.6));
+}
+
+/* Repères d'écran */
+.al-hud {
+  position: fixed;
+  bottom: 28px;
+  z-index: 45;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px rgba(243, 233, 210, 0.5);
+}
+.al-hud p {
+  min-height: 1.5em;
+}
+.al-hud-left {
+  left: 28px;
+  border-left: 1px solid var(--line);
+  padding-left: 14px;
+  min-width: 220px;
+}
+.al-hud-right {
+  right: 28px;
+  border-right: 1px solid var(--line);
+  padding-right: 14px;
+  text-align: left;
+}
+
+/* En-tête */
+.al-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 44;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 22px 28px 40px;
+  background: linear-gradient(to bottom, rgba(10, 10, 10, 0.85), transparent);
+}
+.al-root .al-header .al-logo {
+  position: static;
+}
+.al-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: flex-start;
+}
+.al-root .al-nav button {
+  min-height: 44px;
+  padding: 6px 10px 12px;
+  font-size: 13px;
+  text-transform: uppercase;
+  background: repeating-linear-gradient(
+      to right,
+      var(--ink) 0 1px,
+      transparent 1px 5px
+    )
+    bottom / 100% 6px no-repeat !important;
+}
+.al-root .al-nav button.al-sound {
+  background: var(--ink) !important;
+  color: #121212 !important;
+  min-height: 32px;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+/* Accueil */
+.al-hero {
+  position: relative;
+  height: 100vh;
+  min-height: 560px;
+  display: grid;
+  place-items: center;
+}
+.al-ghost {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--wide);
+  font-size: clamp(72px, 19vw, 280px);
+  letter-spacing: 0.04em;
+  color: rgba(243, 233, 210, 0.05);
+  white-space: nowrap;
+  user-select: none;
+}
+.al-egg {
+  position: absolute;
+  inset: 8% 0 8%;
+  width: 100%;
+  height: 84%;
+}
+.al-hero-left,
+.al-hero-right {
+  position: absolute;
+  top: 50%;
+  margin-top: -23px;
+}
+.al-hero-left {
+  left: 18%;
+}
+.al-hero-right {
+  right: 18%;
+}
+
+/* Sections */
+.al-section {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 110px clamp(20px, 6vw, 110px) 60px;
+}
+.al-eyebrow {
+  color: var(--dim);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+}
+.al-h2 {
+  margin-top: 10px !important;
+  font-family: var(--wide);
+  font-size: clamp(28px, 4.2vw, 54px);
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.al-lead {
+  margin-top: 14px !important;
+  max-width: 58ch;
+  color: var(--dim);
+  font-size: 15px;
+}
+.al-grid {
+  margin-top: 40px !important;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 26px;
+}
+.al-cell {
+  perspective: 900px;
+}
+
+/* Cartes de personnages : inclinaison 3D, reflet qui suit la souris. */
+.al-root button.al-card {
+  --rx: 0deg;
+  --ry: 0deg;
+  --gx: 50%;
+  --gy: 50%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  min-height: 350px;
+  padding: 18px 20px 20px;
+  text-align: left;
+  border: 1px solid var(--line) !important;
+  background: linear-gradient(
+    160deg,
+    rgba(243, 233, 210, 0.08),
+    rgba(243, 233, 210, 0.015)
+  ) !important;
+  transform: rotateX(var(--rx)) rotateY(var(--ry));
+  transform-style: preserve-3d;
+  transition:
+    transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-color 0.2s;
+}
+.al-root button.al-card[data-tilt='on'] {
+  transition:
+    transform 0.08s linear,
+    border-color 0.2s;
+}
+.al-root button.al-card:hover,
+.al-root button.al-card:focus-visible {
+  border-color: var(--ink) !important;
+}
+.al-card::before,
+.al-card::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--ink);
+  pointer-events: none;
+}
+.al-card::before {
+  top: -1px;
+  left: -1px;
+  border-right: 0;
+  border-bottom: 0;
+}
+.al-card::after {
+  right: -1px;
+  bottom: -1px;
+  border-left: 0;
+  border-top: 0;
+}
+.al-glare {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at var(--gx) var(--gy),
+    rgba(243, 233, 210, 0.17),
+    transparent 55%
+  );
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+[data-tilt='on'] > .al-glare {
+  opacity: 1;
+}
+.al-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--dim);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  transform: translateZ(18px);
+}
+.al-card-icon {
+  display: grid;
+  place-items: center;
+  flex: 1;
+  transform: translateZ(54px);
+  animation: al-float 6s ease-in-out infinite;
+}
+.al-icon {
+  width: 104px;
+  height: 104px;
+  color: var(--ink);
+  filter: drop-shadow(0 0 6px rgba(243, 233, 210, 0.5));
+}
+.al-card-name {
+  font-family: var(--wide);
+  font-size: 22px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transform: translateZ(34px);
+}
+.al-card-role {
+  color: var(--dim);
+  font-size: 13px;
+  transform: translateZ(24px);
+}
+.al-card-open {
+  margin-top: 6px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+  transform: translateZ(24px);
+}
+@keyframes al-float {
+  0%,
+  100% {
+    transform: translateZ(54px) translateY(0);
+  }
+  50% {
+    transform: translateZ(54px) translateY(-7px);
+  }
+}
+
+/* Dossier ouvert */
+.al-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 20px;
+  background: rgba(8, 8, 8, 0.84);
+  perspective: 1400px;
+  animation: al-fade 0.25s ease;
+}
+.al-sheet {
+  --rx: 0deg;
+  --ry: 0deg;
+  --gx: 50%;
+  --gy: 50%;
+  position: relative;
+  width: min(880px, 100%);
+  padding: 22px 26px 30px;
+  border: 1px solid var(--ink);
+  background: #151515;
+  box-shadow: 0 0 40px rgba(243, 233, 210, 0.12);
+  transform: rotateX(var(--rx)) rotateY(var(--ry));
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: al-sheet-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.al-sheet[data-tilt='on'] {
+  transition: transform 0.08s linear;
+}
+.al-sheet-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+  color: var(--dim);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+}
+.al-root button.al-close {
+  min-height: 44px;
+  padding: 6px 12px !important;
+  border: 1px solid var(--ink) !important;
+  color: var(--ink);
+  font-size: 12px;
+}
+.al-root button.al-close:hover,
+.al-root button.al-close:focus-visible {
+  background: var(--ink) !important;
+  color: #121212;
+}
+.al-sheet-body {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 34px;
+  align-items: center;
+  padding-top: 24px;
+}
+.al-sheet-art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 240px;
+  perspective: 600px;
+}
+.al-sheet-art .al-icon {
+  width: 150px;
+  height: 150px;
+  animation: al-swing 7s ease-in-out infinite;
+}
+.al-sheet-art::before,
+.al-sheet-art::after {
+  content: '';
+  position: absolute;
+  inset: 14px;
+  border: 1px dashed var(--line);
+  border-radius: 50%;
+}
+.al-sheet-art::before {
+  animation: al-ring-a 16s linear infinite;
+}
+.al-sheet-art::after {
+  inset: 34px;
+  animation: al-ring-b 22s linear infinite;
+}
+.al-status {
+  color: var(--alert);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+}
+.al-sheet h2 {
+  margin-top: 8px !important;
+  font-family: var(--wide);
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+.al-role {
+  margin-top: 6px !important;
+  color: var(--dim);
+}
+.al-bio {
+  margin-top: 16px !important;
+  font-size: 15px;
+  line-height: 1.7;
+}
+.al-stats {
+  margin-top: 20px !important;
+  display: grid;
+  gap: 10px;
+}
+.al-stats li {
+  display: grid;
+  grid-template-columns: 130px 1fr 34px;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+}
+.al-stats b {
+  font-weight: 400;
+  text-align: right;
+}
+.al-meter {
+  height: 8px;
+  border: 1px solid var(--line);
+}
+.al-meter i {
+  display: block;
+  height: 100%;
+  width: var(--v);
+  background: var(--ink);
+  transform-origin: left;
+  animation: al-fill 0.9s 0.3s ease-out both;
+}
+.al-fine {
+  margin-top: 14px !important;
+  color: var(--dim);
+  font-size: 11px;
+}
+@keyframes al-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes al-sheet-in {
+  from {
+    opacity: 0;
+    transform: rotateY(-62deg) rotateX(8deg) scale(0.82);
+  }
+}
+@keyframes al-fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes al-swing {
+  0%,
+  100% {
+    transform: rotateY(-26deg);
+  }
+  50% {
+    transform: rotateY(26deg);
+  }
+}
+@keyframes al-ring-a {
+  to {
+    transform: rotateY(360deg);
+  }
+}
+@keyframes al-ring-b {
+  to {
+    transform: rotateX(360deg);
+  }
+}
+
+/* Jeu */
+.al-root .al-game.ds {
+  margin-top: 28px;
+  max-width: 400px;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--mono);
+}
+.al-game .ds-game-canvas {
+  border: 1px solid var(--line);
+}
+.al-game .ds-button {
+  min-height: 46px;
+  background: var(--ink);
+  color: #121212;
+  border: 1px solid var(--ink);
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.al-game .ds-button.secondary {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line);
+}
+.al-game .ds-button:hover {
+  background: #fff6df;
+  color: #121212;
+}
+.al-game .ds-game-calm {
+  color: var(--ink);
+}
+.al-game .ds-game-score,
+.al-game .ds-game-status {
+  color: var(--ink);
+}
+
+.al-footer {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 60px clamp(20px, 6vw, 110px) 140px;
+  display: grid;
+  gap: 10px;
+  color: var(--dim);
+  font-size: 12px;
+  line-height: 1.7;
+  border-top: 1px solid var(--line);
+}
+
+@media (max-width: 860px) {
+  .al-hero-left,
+  .al-hero-right {
+    top: auto;
+    bottom: 110px;
+    margin-top: 0;
+  }
+  .al-hero-left {
+    left: 8%;
+  }
+  .al-hero-right {
+    right: 8%;
+  }
+  .al-sheet-body {
+    grid-template-columns: 1fr;
+  }
+  .al-sheet-art {
+    height: 190px;
+  }
+  .al-nav {
+    gap: 6px;
+  }
+}
+@media (max-width: 640px) {
+  .al-header {
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 16px 30px;
+  }
+  .al-logo {
+    top: 16px;
+    left: 16px;
+    font-size: 22px;
+  }
+  .al-hud-right {
+    display: none;
+  }
+  .al-hud-left {
+    left: 16px;
+    min-width: 0;
+  }
+  .al-stats li {
+    grid-template-columns: 96px 1fr 30px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .al-root *,
+  .al-root *::before,
+  .al-root *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Les textes héritent de la couleur de la page (le style global colore les paragraphes). */
+.al-root p,
+.al-root li {
+  color: inherit;
+}
+.al-root .al-lead,
+.al-root .al-eyebrow,
+.al-root .al-role,
+.al-root .al-fine,
+.al-root .al-footer,
+.al-root .al-card-role,
+.al-root .al-card-top {
+  color: var(--dim);
+}
+.al-root .al-status {
+  color: var(--alert);
+}
+.al-game-section {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 60px;
+  align-items: start;
+}
+.al-game-section .al-game.ds {
+  margin-top: 0;
+}
+@media (max-width: 960px) {
+  .al-game-section {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+.al-root .al-ghost {
+  color: rgba(243, 233, 210, 0.05);
+}

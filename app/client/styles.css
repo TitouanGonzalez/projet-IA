@@ -725,6 +725,43 @@ del {
 .need-adapt {
   color: var(--color-warning);
 }
+/* Jeu d'esquive : le canvas lit les tokens, la mise en page est ici. */
+.ds-game {
+  display: grid;
+  gap: var(--space-sm);
+  max-width: 360px;
+}
+.ds-game-canvas {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 320 / 420;
+  border-radius: var(--radius-control);
+  touch-action: none;
+}
+.ds .ds-game-status {
+  margin: 0;
+  min-height: 1.5em;
+  color: var(--color-text);
+  font-weight: 700;
+}
+.ds .ds-game-score {
+  margin: 0;
+  font-size: calc(var(--font-body) * 0.875);
+}
+.ds-game-controls {
+  display: flex;
+  gap: var(--space-sm);
+}
+.ds-game-controls .ds-button {
+  flex: 1;
+  touch-action: none;
+}
+.ds-game-calm {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: calc(var(--font-body) * 0.875);
+}
 .ds-form {
   display: flex;
   flex-direction: column;

@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test('boucle centrale réelle : diff, validation, propagation, recharge, annulation sélective', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/#atelier');
   await expect(
     page.getByRole('heading', { name: 'Une source. Toutes les vues.' }),
   ).toBeVisible();
@@ -62,7 +62,7 @@ test('boucle centrale réelle : diff, validation, propagation, recharge, annulat
 test('largeurs réelles, interactions, formulaire et desktop responsive', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/#atelier');
   const frame = page.frameLocator('iframe');
   for (const [value, width] of [
     ['0', 320],
@@ -102,9 +102,7 @@ test('largeurs réelles, interactions, formulaire et desktop responsive', async 
   await frame
     .getByRole('button', { name: 'Suivre ce jeu', exact: true })
     .click();
-  await expect(
-    frame.getByRole('button', { name: 'Jeu suivi' }),
-  ).toBeVisible();
+  await expect(frame.getByRole('button', { name: 'Jeu suivi' })).toBeVisible();
   await frame.getByRole('button', { name: 'Trouver', exact: true }).click();
   await expect(
     frame.getByText('Les jeux jouables pour toi apparaîtront ici.'),
@@ -130,7 +128,7 @@ test('largeurs réelles, interactions, formulaire et desktop responsive', async 
 test('entrée couleur invalide sans mutation et clavier du diff', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/#atelier');
   await page.getByLabel('Valeur du token').fill('red');
   await page.getByRole('button', { name: 'Proposer', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('Données invalides');
@@ -147,7 +145,7 @@ test('entrée couleur invalide sans mutation et clavier du diff', async ({
 test('export navigateur, import valide avec diff, fichier invalide sans écriture', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/#atelier');
   await expect(
     page.getByRole('heading', { name: 'Tokens sémantiques' }),
   ).toBeVisible();
@@ -187,7 +185,7 @@ test('export navigateur, import valide avec diff, fichier invalide sans écritur
 test('V2 : contraste proposé immédiat sans modifier les composants enregistrés', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/#atelier');
   await page
     .getByRole('combobox', { name: 'Token', exact: true })
     .selectOption('color.brand');
@@ -206,7 +204,7 @@ test('V2 : contraste proposé immédiat sans modifier les composants enregistré
 test('V2 : brief privé persistant, indépendant du mode IA', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/#atelier');
   await page.getByText('Mon PFE · brief privé', { exact: true }).click();
   await page
     .getByLabel('Nom du PFE', { exact: true })
@@ -232,7 +230,7 @@ test('V2 : brief privé persistant, indépendant du mode IA', async ({
 test('V2 : recherche, brouillon récupéré après recharge et abandon sans écriture', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/#atelier');
   const before = await (await page.request.get('/api/state')).json();
   await page.getByLabel('Rechercher un token').fill('space');
   await expect(
@@ -266,14 +264,14 @@ test('V2 : conflit multi-onglets visible dans le diff, aucune perte de données'
   page,
   context,
 }) => {
-  await page.goto('/');
+  await page.goto('/#atelier');
   await page
     .getByRole('combobox', { name: 'Token', exact: true })
     .selectOption('color.brand');
   await page.getByLabel('Valeur du token').fill('#223355');
   await page.getByRole('button', { name: 'Proposer', exact: true }).click();
   const other = await context.newPage();
-  await other.goto('/');
+  await other.goto('/#atelier');
   await other
     .getByRole('combobox', { name: 'Token', exact: true })
     .selectOption('color.brand');
@@ -297,7 +295,7 @@ test('V2 : conflit multi-onglets visible dans le diff, aucune perte de données'
 test('V2 : capacité de session périmée simulée sans rejeu ambigu', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/#atelier');
   await page.getByRole('heading', { name: 'Tokens sémantiques' }).waitFor();
   const boot = await (await page.request.get('/api/bootstrap')).json();
   // Un seul refus certain avant mutation, comme une capacité périmée après restart.
@@ -337,7 +335,7 @@ test('V2 : clavier, mobile 375 px et absence de stockage navigateur', async ({
     };
   });
   await page.setViewportSize({ width: 375, height: 812 });
-  await page.goto('/');
+  await page.goto('/#atelier');
   await page.getByRole('heading', { name: 'Tokens sémantiques' }).waitFor();
   await page.keyboard.press('Tab');
   await expect(
@@ -354,4 +352,46 @@ test('V2 : clavier, mobile 375 px et absence de stockage navigateur', async ({
   expect(
     await page.locator('body').evaluate((el) => el.scrollWidth <= innerWidth),
   ).toBe(true);
+});
+
+test('jeu : démarrage et pilotage au clavier, pause, couleurs issues des tokens', async ({
+  page,
+}) => {
+  await page.goto('/#atelier');
+  const game = page.locator('.ds-game');
+  await game.scrollIntoViewIfNeeded();
+  await expect(game).toHaveAttribute('data-state', 'ready');
+  await game.locator('canvas').focus();
+  await page.keyboard.press('Enter');
+  await expect(game).toHaveAttribute('data-state', 'playing');
+  const shipX = async () => Number(await game.getAttribute('data-ship-x'));
+  const x0 = await shipX();
+  await page.keyboard.down('ArrowLeft');
+  await page.waitForTimeout(250);
+  await page.keyboard.up('ArrowLeft');
+  const x1 = await shipX();
+  expect(x1).toBeLessThan(x0);
+  await page.keyboard.down('ArrowRight');
+  await page.waitForTimeout(250);
+  await page.keyboard.up('ArrowRight');
+  expect(await shipX()).toBeGreaterThan(x1);
+  // Le vaisseau est dessiné avec la valeur courante de color.brand (le serveur de test
+  // est partagé : les autres tests ont pu la modifier, on lit donc le token en direct).
+  const { pixel, brand } = await game.locator('canvas').evaluate(
+    (el, x) => {
+      const ctx = (el as HTMLCanvasElement).getContext('2d')!;
+      const hex = getComputedStyle(el).getPropertyValue('--color-brand').trim();
+      return {
+        pixel: Array.from(ctx.getImageData(x + 14, 380 + 24, 1, 1).data),
+        brand: [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)),
+      };
+    },
+    await shipX(),
+  );
+  expect(pixel.slice(0, 3)).toEqual(brand);
+  await page.keyboard.press(' ');
+  await expect(game).toHaveAttribute('data-state', 'paused');
+  await page.keyboard.press(' ');
+  await expect(game).toHaveAttribute('data-state', 'playing');
+  expect(await page.evaluate(() => localStorage.length)).toBe(0);
 });

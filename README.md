@@ -1,40 +1,29 @@
-# Checkpoint, design system du PFE
+# Nostromo, un site interactif sur l'équipage
 
-PFE de M2 UX/UI (ECV Bordeaux, 2026-2027) de Titouan Gonzalez. Checkpoint est un service en français, sur mobile et sur ordinateur. Il dit à un joueur en situation de handicap si un jeu est jouable pour lui avant l'achat. Le service part des besoins de la personne, jamais de son diagnostic. Le commanditaire fictif est l'association CapGame.
+Un petit site de fan, dans l'univers de la saga Alien, réalisé pour un exercice de design interactif : un écran d'entrée de terminal, un œuf en fil de fer 3D qui suit la souris, six dossiers de personnages en cartes inclinées en 3D, un jeu d'esquive et une musique d'ambiance rétro-futuriste.
 
-![DS-Studio avec les tokens Checkpoint](docs/images/ds-studio-checkpoint.png)
+![Accueil de Nostromo](docs/images/nostromo-accueil.png)
+
+![Un dossier de personnage](docs/images/nostromo-dossier.png)
 
 ## Ce que contient ce dépôt
 
-- Un banc d'essai DS-Studio (le starter de l'enseignant, repris ci-dessous) réglé sur Checkpoint : 11 couleurs, la police Atkinson Hyperlegible Next, une taille de corps de 16 px et un rayon de 8 px, avec un aperçu qui montre de vrais jeux.
-- Le contexte du projet dans `workspace/` : `PFE.md` (sujet et publics), `DESIGN_RULES.md` (règles de conception) et `DECISIONS.md` (journal des choix, limites comprises).
+- Le site Nostromo, qui s'ouvre à la racine (`/`).
+- Le banc d'essai DS-Studio de l'enseignant, repris ci-dessous, toujours accessible à l'adresse `/#atelier`.
+- Le contexte du projet dans `workspace/` : `PFE.md` (le sujet), `DESIGN_RULES.md` (les règles de conception) et `DECISIONS.md` (le journal des choix, limites comprises).
 
-## Le verdict, en trois états
+## Ce qui est fait à la main
 
-| Verdict                  | Sens                                                                                                                         |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| Jouable                  | Tous tes besoins indispensables sont couverts par le jeu.                                                                    |
-| Jouable avec adaptations | Au moins un besoin n'est pas couvert par le jeu, mais un réglage, un logiciel ou ton matériel le compense, et c'est vérifié. |
-| Pas jouable en l'état    | Au moins un besoin indispensable n'est pas couvert, et rien de vérifié ne le compense.                                       |
+- L'œuf en fil de fer est dessiné et projeté sur un canvas 2D, sans bibliothèque 3D.
+- Les cartes et les dossiers utilisent des transformations CSS 3D.
+- La musique est synthétisée dans le navigateur avec Web Audio : aucun fichier audio, donc aucun droit à gérer. Elle ne démarre qu'après le clic sur ENTER, et un bouton la coupe.
+- Aucun flash, mouvements réduits si le système le demande, rien n'est stocké dans le navigateur.
 
-Chaque verdict a une icône et un texte : la couleur ne porte jamais l'information seule.
+## Mentions
 
-## Le design system dans Figma
+Page de fan, non officielle. Alien et ses personnages appartiennent à 20th Century Studios. Les textes sont originaux, sans citation ni visuel du film. Les jauges des dossiers sont fictives.
 
-La référence complète vit dans Figma (accès réservé) : https://www.figma.com/design/2uqWKJjv2XY5Z5brHiiXVc
-
-- 35 écrans : ordinateur 1440 px, mobile 390 x 844 et tablette 1194 px, avec une version mobile sous chaque écran ordinateur sauf le tableau de résultats.
-- Une base Carbon (IBM) pour la structure, l'échelle d'espacement, les états et l'accessibilité. Les couleurs, la police et les rayons sont propres à Checkpoint.
-- Cibles cliquables de 48 px minimum, focus visible, libellés toujours visibles au-dessus des champs, deux modes de couleurs (Clair et Contraste élevé).
-- Un guide de style de huit planches : couleurs avec contrastes, typographie, espacements, gabarits, icônes, accessibilité et inventaire des composants.
-
-DS-Studio ne se connecte pas à Figma. Il ne contient que 18 tokens plats, le reste du système reste dans le fichier Figma.
-
-## Données de démonstration
-
-Les jeux et leurs tags d'accessibilité viennent des boutiques (relevé du 26 octobre 2026). Les avis de joueurs, les vérifications et les sessions CapGame sont un scénario inventé pour le PFE.
-
-## Lancer DS-Studio
+## Lancer le site
 
 ```
 npm ci

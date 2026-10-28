@@ -24,7 +24,7 @@ const devices = [
   { label: 'Grand · 430', width: 430 },
   { label: 'Desktop · 1024', width: 1024 },
 ];
-function useDesignState() {
+export function useDesignState() {
   const [state, setState] = useState<State>();
   const [error, setError] = useState('');
   useEffect(() => {

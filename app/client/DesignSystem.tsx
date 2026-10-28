@@ -1,5 +1,6 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { tokenCss, type Tokens } from '../shared/model.js';
+import { Game } from './Game.js';
 
 export function DSProvider({
   tokens,
@@ -283,6 +284,14 @@ export function Catalogue({ tokens }: { tokens: Tokens }) {
             <StatutInfo state="inconnu" />
           </div>
           <GameCard />
+        </section>
+        <section>
+          <div className="section-label">06 / JEU</div>
+          <h3>Esquive les obstacles.</h3>
+          <p>
+            Le vaisseau et les obstacles prennent les couleurs de tes tokens.
+          </p>
+          <Game />
         </section>
       </div>
     </DSProvider>
