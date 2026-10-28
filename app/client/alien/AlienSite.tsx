@@ -10,105 +10,12 @@ import {
 import { bootLines, dossiers, type Dossier } from './data.js';
 import { createSoundtrack, type SoundKind, type Soundtrack } from './audio.js';
 import MotionTracker from './MotionTracker.js';
+import { CollectionView, PackOpening, useCollection } from './Cards.js';
 import MuthurTerminal from './MuthurTerminal.js';
 import Ovomorph from './Ovomorph.js';
+import { Icon, photoFor, focus, reducedMotion, useTilt } from './shared.js';
 
 type Sfx = (kind: SoundKind) => void;
-
-// Portraits facultatifs : il suffit de déposer un fichier nommé comme le dossier
-// (ripley.jpg, xenomorphe.png, ash.webp...) dans app/client/alien/images/.
-const photos = import.meta.glob('./images/*.{jpg,jpeg,png,webp}', {
-  eager: true,
-  query: '?url',
-  import: 'default',
-}) as Record<string, string>;
-// Cadrage des portraits (object-position), pour garder le visage dans la carte.
-const focus: Record<string, string> = {
-  ripley: '50% 50%',
-  xenomorphe: '50% 50%',
-  ash: '50% 50%',
-  bishop: '50% 50%',
-  jonesy: '50% 50%',
-  mother: '50% 50%',
-};
-function photoFor(id: string): string | undefined {
-  for (const [path, url] of Object.entries(photos))
-    if (
-      path
-        .split('/')
-        .pop()!
-        .replace(/\.[^.]+$/, '') === id
-    )
-      return url;
-  return undefined;
-}
-
-function reducedMotion(): boolean {
-  try {
-    return matchMedia('(prefers-reduced-motion: reduce)').matches;
-  } catch {
-    return false;
-  }
-}
-
-function Icon({ kind }: { kind: Dossier['icon'] }) {
-  const paths: Record<Dossier['icon'], ReactNode> = {
-    visor: (
-      <>
-        <path d="M14 44V30C14 18 22 10 32 10s18 8 18 20v14" />
-        <path d="M14 44h36" />
-        <rect x="20" y="26" width="24" height="10" rx="2" />
-        <path d="M26 44v8M38 44v8" />
-      </>
-    ),
-    creature: (
-      <>
-        <path d="M6 42C12 22 28 12 58 14c-4 12-12 20-24 22l-6 12-7-7-14 3z" />
-        <path d="M30 26l16-3M30 31l14 0" />
-      </>
-    ),
-    android: (
-      <>
-        <circle cx="32" cy="28" r="16" />
-        <path d="M23 26h18M23 32h18M32 44v10M22 54h20" />
-      </>
-    ),
-    synthetic: (
-      <>
-        <rect x="16" y="10" width="32" height="34" rx="4" />
-        <path d="M22 22h20M22 28h20M22 34h12M32 44v10M20 54h24" />
-      </>
-    ),
-    cat: (
-      <>
-        <path d="M12 14l9 10h22l9-10v30c0 8-9 12-20 12S12 52 12 44z" />
-        <circle cx="25" cy="34" r="2" />
-        <circle cx="39" cy="34" r="2" />
-        <path d="M29 43l3 3 3-3M32 46v5" />
-      </>
-    ),
-    terminal: (
-      <>
-        <rect x="8" y="12" width="48" height="32" rx="3" />
-        <path d="M16 22l8 6-8 6M30 36h16M24 54h16M32 44v10" />
-      </>
-    ),
-  };
-  return (
-    <svg
-      viewBox="0 0 64 64"
-      className="al-icon"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      {paths[kind]}
-    </svg>
-  );
-}
 
 // Écrit les lignes de démarrage lettre par lettre, comme un terminal.
 function useTypewriter(lines: string[], speed = 34) {
@@ -196,36 +103,6 @@ function Cursor() {
       </svg>
     </div>
   );
-}
-
-// Inclinaison 3D qui suit la souris. On écrit directement dans le style : pas de rendu React
-// à chaque mouvement.
-function useTilt<T extends HTMLElement>(max = 14) {
-  const ref = useRef<T>(null);
-  const still = useRef(reducedMotion());
-  const onMove = useCallback(
-    (e: ReactPointerEvent<T>) => {
-      const el = ref.current;
-      if (!el || still.current) return;
-      const r = el.getBoundingClientRect();
-      const px = (e.clientX - r.left) / r.width;
-      const py = (e.clientY - r.top) / r.height;
-      el.style.setProperty('--ry', `${(px - 0.5) * max * 2}deg`);
-      el.style.setProperty('--rx', `${-(py - 0.5) * max * 2}deg`);
-      el.style.setProperty('--gx', `${px * 100}%`);
-      el.style.setProperty('--gy', `${py * 100}%`);
-      el.dataset.tilt = 'on';
-    },
-    [max],
-  );
-  const onLeave = useCallback(() => {
-    const el = ref.current;
-    if (!el) return;
-    el.style.setProperty('--ry', '0deg');
-    el.style.setProperty('--rx', '0deg');
-    el.dataset.tilt = 'off';
-  }, []);
-  return { ref, onPointerMove: onMove, onPointerLeave: onLeave };
 }
 
 function DossierCard({
@@ -376,6 +253,7 @@ export default function AlienSite() {
   const [section, setSection] = useState('ACCUEIL');
   const sound = useRef<Soundtrack | null>(null);
   const trigger = useRef<HTMLElement | null>(null);
+  const coll = useCollection();
   const [session] = useState(() =>
     String(Math.floor(100000 + Math.random() * 900000)),
   );
@@ -398,6 +276,7 @@ export default function AlienSite() {
       dossiers: 'DOSSIERS',
       detecteur: 'DÉTECTEUR',
       terminal: 'TERMINAL',
+      collection: 'COLLECTION',
     };
     const io = new IntersectionObserver(
       (entries) => {
@@ -428,6 +307,7 @@ export default function AlienSite() {
   };
   const sfx = useCallback<Sfx>((kind) => sound.current?.play(kind), []);
   const beep = useCallback((freq: number) => sound.current?.beep(freq), []);
+  const chime = useCallback((level: number) => sound.current?.chime(level), []);
   const toggleSound = () => {
     const s = sound.current;
     if (!s) return;
@@ -514,6 +394,14 @@ export default function AlienSite() {
           </button>
           <button type="button" onClick={() => go('terminal')} {...hover}>
             :TERMINAL
+          </button>
+          <button type="button" onClick={() => go('collection')} {...hover}>
+            :COLLECTION
+            {coll.c.eggs > 0 && (
+              <span className="al-badge" aria-label={`${coll.c.eggs} œufs`}>
+                {coll.c.eggs}
+              </span>
+            )}
           </button>
           <button type="button" onClick={() => go('apropos')} {...hover}>
             :À PROPOS
@@ -612,6 +500,27 @@ export default function AlienSite() {
             gagnes. Sinon, personne ne viendra.
           </p>
           <MuthurTerminal beep={beep} sfx={sfx} />
+        </section>
+
+        <section id="collection" className="al-section al-pack-section">
+          <p className="al-eyebrow">{'// ŒUFS ET COLLECTION'}</p>
+          <h2 className="al-h2">Ouvre un œuf.</h2>
+          <p className="al-lead">
+            Un nouvel œuf arrive toutes les 10 minutes, et tu peux en garder
+            jusqu’à 10. Chacun cache une carte : commune, peu commune, rare,
+            super rare ou légendaire. Retrouve toutes tes cartes dans la
+            collection.
+          </p>
+          <PackOpening
+            api={coll}
+            sfx={sfx}
+            chime={chime}
+            onSeeCollection={() => go('cartes')}
+          />
+          <div id="cartes" className="al-coll-block">
+            <h3 className="al-h3">Ta collection</h3>
+            <CollectionView api={coll} />
+          </div>
         </section>
       </main>
 

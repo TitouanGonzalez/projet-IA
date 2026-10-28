@@ -34,13 +34,16 @@ test('intro : démarrage du terminal, puis entrée sur le site', async ({
   await expect(page.locator('[data-phase="site"]')).toBeVisible();
   await expect(page.getByRole('button', { name: 'DÉCOUVRIR' })).toBeVisible();
   await expect(page.locator('.al-card')).toHaveCount(6);
-  expect(await page.evaluate(() => localStorage.length)).toBe(0);
+  // Seule la collection de cartes est enregistrée, et rien d'autre.
+  expect(await page.evaluate(() => Object.keys(localStorage))).toEqual([
+    'nostromo-collection-v1',
+  ]);
 });
 
 test('fil de fer 3D animé et ouvert au survol du bouton', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'ENTER' }).click();
-  const egg = page.locator('canvas.al-egg');
+  const egg = page.locator('#accueil canvas.al-egg');
   await expect(egg).toBeVisible();
   const first = Number(await egg.getAttribute('data-frames'));
   await page.waitForTimeout(400);
@@ -57,10 +60,11 @@ test('cartes : inclinaison 3D, dossier ouvert avec jauges, retour du focus', asy
   await card.scrollIntoViewIfNeeded();
   // Le défilement est doux : on attend qu'il soit fini avant de viser la carte.
   await settle(page, '.al-card');
-  const box = (await card.boundingBox())!;
   await expect
     .poll(
       async () => {
+        await card.scrollIntoViewIfNeeded();
+        const box = (await card.boundingBox())!;
         await page.mouse.move(box.x + box.width - 40, box.y + 40);
         await page.mouse.move(box.x + box.width - 10, box.y + 10, { steps: 4 });
         return card.getAttribute('data-tilt');
@@ -68,9 +72,9 @@ test('cartes : inclinaison 3D, dossier ouvert avec jauges, retour du focus', asy
       { timeout: 15000, intervals: [200] },
     )
     .toBe('on');
-  expect(
-    await card.evaluate((el) => el.style.getPropertyValue('--ry')),
-  ).not.toBe('0deg');
+  await expect
+    .poll(() => card.evaluate((el) => el.style.getPropertyValue('--ry')))
+    .not.toBe('0deg');
   await card.click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
@@ -216,7 +220,7 @@ test('détecteur : clavier et impulsion avec recharge', async ({ page }) => {
   await expect
     .poll(async () => Number(await tracker.getAttribute('data-charge')))
     .toBeLessThan(0.5);
-  await expect(page.getByRole('status').last()).toContainText('contact', {
+  await expect(page.locator('.al-trk-caption')).toContainText('contact', {
     ignoreCase: true,
   });
 });
@@ -415,4 +419,211 @@ test('terminal : phrases proposées au clavier, retour depuis la saisie libre', 
   await page.keyboard.press('1'); // première phrase proposée
   await page.getByRole('button', { name: /PASSER L’ANIMATION/ }).click();
   await expect(term).toHaveAttribute('data-phase', 'win');
+});
+
+const KEY = 'nostromo-collection-v1';
+
+// Force le hasard à toujours donner la première carte légendaire (Ellen Ripley).
+async function legendary(page: import('@playwright/test').Page) {
+  await page.addInitScript(() => {
+    Math.random = () => 0.001;
+  });
+}
+async function openCollection(page: import('@playwright/test').Page) {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'ENTER' }).click();
+  await page.getByRole('button', { name: /:COLLECTION/ }).click();
+  await settle(page, '.al-pack-stage');
+}
+const eggButton = (page: import('@playwright/test').Page) =>
+  page.getByRole('button', { name: /Ouvrir un œuf|Aucun œuf/ });
+
+test('œufs : trois au départ, une carte à l’ouverture, collection gardée après rechargement', async ({
+  page,
+}) => {
+  await legendary(page);
+  await openCollection(page);
+  const pack = page.locator('.al-pack');
+  await expect(pack).toHaveAttribute('data-eggs', '3');
+  await expect(page.locator('.al-coll')).toHaveAttribute('data-owned', '0');
+  await expect(page.getByText('PROCHAIN ŒUF DANS 09:5')).toBeVisible();
+  await eggButton(page).click();
+  await expect(pack).toHaveAttribute('data-phase', 'cracking');
+  await expect(pack).toHaveAttribute('data-phase', 'revealed', {
+    timeout: 8000,
+  });
+  await expect(pack).toHaveAttribute('data-eggs', '2');
+  await expect(pack).toContainText('NOUVELLE CARTE');
+  await expect(
+    pack.getByRole('article', { name: /Ellen Ripley, carte légendaire/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Carte obtenue' }),
+  ).toContainText('Ellen Ripley, légendaire, nouvelle carte');
+  await expect(page.locator('.al-coll')).toHaveAttribute('data-owned', '1');
+  expect(
+    JSON.parse(await page.evaluate((k) => localStorage.getItem(k)!, KEY)).owned,
+  ).toEqual({ ripley: 1 });
+  // La collection survit à un rechargement.
+  await page.reload();
+  await page.getByRole('button', { name: 'ENTER' }).click();
+  await expect(page.locator('.al-pack')).toHaveAttribute('data-eggs', '2');
+  await expect(page.locator('.al-coll')).toHaveAttribute('data-owned', '1');
+});
+
+test('œufs : les doublons sont comptés, et sans œuf on attend', async ({
+  page,
+}) => {
+  await legendary(page);
+  await openCollection(page);
+  const pack = page.locator('.al-pack');
+  for (let i = 0; i < 3; i++) {
+    await eggButton(page)
+      .or(page.getByRole('button', { name: /OUVRIR UN AUTRE ŒUF/ }))
+      .first()
+      .click();
+    await expect(pack).toHaveAttribute('data-phase', 'revealed', {
+      timeout: 8000,
+    });
+  }
+  await expect(pack).toContainText('DOUBLON, 3 EXEMPLAIRES');
+  await expect(pack).toHaveAttribute('data-eggs', '0');
+  await expect(page.locator('.al-coll')).toHaveAttribute('data-copies', '3');
+  await expect(page.locator('.al-coll')).toHaveAttribute('data-owned', '1');
+  await page.getByRole('button', { name: 'FERMER' }).click();
+  await expect(eggButton(page)).toBeDisabled();
+  await expect(eggButton(page)).toHaveAccessibleName(
+    'Aucun œuf disponible pour le moment',
+  );
+  await expect(page.getByText(/PROCHAIN ŒUF DANS/)).toBeVisible();
+});
+
+async function savedAs(
+  page: import('@playwright/test').Page,
+  eggs: number,
+  agoMs: number,
+) {
+  await page.addInitScript(
+    ({ key, eggs, agoMs }) => {
+      localStorage.setItem(
+        key,
+        JSON.stringify({
+          eggs,
+          last: Date.now() - agoMs,
+          owned: {},
+          demo: false,
+        }),
+      );
+    },
+    { key: KEY, eggs, agoMs },
+  );
+}
+
+test('œufs : ceux gagnés pendant l’absence sont ajoutés', async ({ page }) => {
+  await savedAs(page, 0, 35 * 60_000); // 35 minutes : trois œufs
+  await openCollection(page);
+  await expect(page.locator('.al-pack')).toHaveAttribute('data-eggs', '3');
+});
+
+test('œufs : une très longue absence ne dépasse pas dix œufs', async ({
+  page,
+}) => {
+  await savedAs(page, 4, 24 * 3600_000);
+  await openCollection(page);
+  await expect(page.locator('.al-pack')).toHaveAttribute('data-eggs', '10');
+  await expect(
+    page.getByText('STOCK PLEIN. LE COMPTEUR EST EN PAUSE.'),
+  ).toBeVisible();
+});
+
+test('œufs : une sauvegarde abîmée ne casse pas la page', async ({ page }) => {
+  await page.addInitScript((key) => {
+    localStorage.setItem(key, '{{ pas du json');
+  }, KEY);
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
+  await openCollection(page);
+  await expect(page.locator('.al-pack')).toHaveAttribute('data-eggs', '3');
+  await expect(page.locator('.al-coll')).toHaveAttribute('data-owned', '0');
+  expect(errors).toEqual([]);
+});
+
+test('collection : 24 cartes, filtre par rareté, mode démo et réinitialisation', async ({
+  page,
+}) => {
+  await legendary(page);
+  await openCollection(page);
+  const cells = page.locator('.al-coll-cell');
+  await expect(cells).toHaveCount(24);
+  await page.getByRole('button', { name: 'LÉGENDAIRE', exact: true }).click();
+  await expect(cells).toHaveCount(2);
+  await page.getByRole('button', { name: 'COMMUNE', exact: true }).click();
+  await expect(cells).toHaveCount(6);
+  await page.getByRole('button', { name: 'TOUTES', exact: true }).click();
+  await expect(cells).toHaveCount(24);
+  // Des cartes pas encore obtenues sont des cases verrouillées.
+  await expect(
+    page.getByRole('article', { name: /pas encore obtenue/ }),
+  ).toHaveCount(24);
+  await eggButton(page).click();
+  await expect(page.locator('.al-pack')).toHaveAttribute(
+    'data-phase',
+    'revealed',
+    {
+      timeout: 8000,
+    },
+  );
+  await expect(
+    page.getByRole('article', { name: /pas encore obtenue/ }),
+  ).toHaveCount(23);
+  // Mode démo : un œuf toutes les 10 secondes, donc le stock remonte vite.
+  await page.getByRole('button', { name: /MODE DÉMO/ }).click();
+  await expect(
+    page.getByRole('button', { name: /MODE DÉMO ACTIVÉ/ }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText(/\(MODE DÉMO\)/)).toBeVisible();
+  await expect
+    .poll(
+      async () =>
+        Number(await page.locator('.al-pack').getAttribute('data-eggs')),
+      {
+        timeout: 25_000,
+        intervals: [500],
+      },
+    )
+    .toBeGreaterThanOrEqual(3);
+  // Réinitialiser demande une confirmation.
+  const reset = page.getByRole('button', {
+    name: 'RÉINITIALISER LA COLLECTION',
+  });
+  await reset.click();
+  await expect(page.locator('.al-coll')).toHaveAttribute('data-owned', '1');
+  await page.getByRole('button', { name: /CONFIRMER : TOUT EFFACER/ }).click();
+  await expect(page.locator('.al-coll')).toHaveAttribute('data-owned', '0');
+  await expect(page.locator('.al-pack')).toHaveAttribute('data-eggs', '3');
+});
+
+test('œufs : au clavier, et la pastille du menu compte les œufs', async ({
+  page,
+}) => {
+  await legendary(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'ENTER' }).click();
+  await expect(page.getByRole('button', { name: /:COLLECTION/ })).toContainText(
+    '3',
+  );
+  await page.getByRole('button', { name: /:COLLECTION/ }).click();
+  await settle(page, '.al-pack-stage');
+  await eggButton(page).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.al-pack')).toHaveAttribute(
+    'data-phase',
+    'revealed',
+    {
+      timeout: 8000,
+    },
+  );
+  await expect(page.getByRole('button', { name: /:COLLECTION/ })).toContainText(
+    '2',
+  );
 });

@@ -8,6 +8,8 @@ export interface Soundtrack {
   play(kind: SoundKind): void;
   // Bip du détecteur de mouvement, à la hauteur demandée (en Hz). Muet quand le son est coupé.
   beep(freq: number): void;
+  // Petite mélodie de révélation d'une carte : de 1 (commune) à 5 (légendaire) notes montantes.
+  chime(level: number): void;
   stop(): void;
 }
 
@@ -115,6 +117,45 @@ export function createSoundtrack(): Soundtrack | null {
   return {
     get on() {
       return on;
+    },
+    chime(level: number) {
+      if (!on || ctx.state !== 'running') return;
+      const now = ctx.currentTime;
+      const steps = Math.max(1, Math.min(5, Math.round(level)));
+      const notes = [330, 392, 494, 659, 880, 1175].slice(
+        0,
+        steps + (steps === 5 ? 1 : 0),
+      );
+      notes.forEach((f, i) => {
+        const t = now + i * 0.12;
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'triangle';
+        o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.06, t + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+        o.connect(g);
+        g.connect(master);
+        if (steps >= 3) g.connect(reverb);
+        o.start(t);
+        o.stop(t + 0.75);
+      });
+      if (steps === 5) {
+        // Une note grave tenue, pour souligner une carte légendaire.
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.value = 110;
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(0.08, now + 0.2);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 1.6);
+        o.connect(g);
+        g.connect(master);
+        g.connect(reverb);
+        o.start(now);
+        o.stop(now + 1.7);
+      }
     },
     beep(freq: number) {
       if (!on || ctx.state !== 'running') return;

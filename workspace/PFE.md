@@ -11,6 +11,7 @@ Page de fan, non officielle. Alien et ses personnages appartiennent à 20th Cent
 - Six cartes de personnages qui s’inclinent en 3D selon la souris, et un dossier qui s’ouvre avec une mini-biographie et des jauges fictives.
 - Un détecteur de mouvement : un radar en éventail avec balayage, des contacts cachés qui s’approchent de la sonde, un bip qui accélère quand on s’approche et une impulsion qui révèle tout. Rester trop longtemps collé à un contact fait perdre la partie.
 - Un jeu dans le terminal MU/TH/UR : six messages pour convaincre la Compagnie d’envoyer de l’aide. On répond en cliquant sur des phrases, et pour deux messages on peut aussi écrire le sien, que la Compagnie analyse. Trois phrases toutes faites sont proposées à chaque fois, pour ne jamais rester bloqué. Gagné si elle accepte, perdu sinon, avec six fins différentes.
+- Des œufs à ouvrir : un nouvel œuf toutes les 10 minutes, dix au maximum. Chaque œuf cache une carte parmi 24, de cinq raretés (commune, peu commune, rare, super rare, légendaire). Une page collection montre les cartes obtenues, les doublons et les cartes encore verrouillées.
 - De petits sons d’interaction discrets au survol et au clic.
 - Une musique d’ambiance rétro-futuriste synthétisée dans le navigateur, qu’on peut couper avec les sons.
 
@@ -18,7 +19,7 @@ Page de fan, non officielle. Alien et ses personnages appartiennent à 20th Cent
 
 - Public : les personnes qui regardent la restitution, sur ordinateur et sur mobile.
 - Aucun flash, mouvements réduits si le système le demande, navigation au clavier, textes lisibles.
-- Aucune donnée n’est envoyée nulle part, rien n’est stocké dans le navigateur.
+- Aucune donnée n’est envoyée nulle part. Seule la collection de cartes est enregistrée dans le navigateur de la personne, avec un bouton pour tout effacer.
 
 ## Ce que je veux montrer vendredi
 

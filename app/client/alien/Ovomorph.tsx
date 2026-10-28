@@ -83,7 +83,21 @@ export default function Ovomorph({ hot }: { hot: boolean }) {
     let last = performance.now();
     let frames = 0;
     let raf = 0;
+    // On ne dessine que ce qui est à l'écran : deux œufs animés ne doivent pas ralentir la page.
+    let visible = true;
+    const watcher =
+      typeof IntersectionObserver !== 'undefined'
+        ? new IntersectionObserver(([entry]) => {
+            visible = entry.isIntersecting;
+          })
+        : null;
+    watcher?.observe(canvas);
     const loop = (now: number) => {
+      if (!visible) {
+        last = now;
+        raf = requestAnimationFrame(loop);
+        return;
+      }
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       frames++;
@@ -141,6 +155,7 @@ export default function Ovomorph({ hot }: { hot: boolean }) {
     raf = requestAnimationFrame(loop);
     return () => {
       cancelAnimationFrame(raf);
+      watcher?.disconnect();
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('resize', resize);
     };
