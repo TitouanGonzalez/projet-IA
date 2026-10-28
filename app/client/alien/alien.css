@@ -1343,7 +1343,7 @@
   position: relative;
   display: grid;
   place-items: center;
-  height: 420px;
+  min-height: 420px;
   overflow: hidden;
   border: 1px solid var(--line);
   background:
@@ -1710,9 +1710,142 @@
 }
 @media (max-width: 640px) {
   .al-pack-stage {
-    height: 340px;
+    min-height: 340px;
   }
   .al-coll-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Cartes légendaires : bordure irisée qui tourne, braises qui montent, rayons derrière la carte.
+   Tout est lent et progressif, sans clignotement. */
+@property --al-ang {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+.al-cf.r-legendaire {
+  border: 3px solid transparent;
+  background:
+    linear-gradient(160deg, rgba(40, 34, 14, 0.96), rgba(8, 12, 7, 0.98))
+      padding-box,
+    conic-gradient(
+        from var(--al-ang),
+        #e3b23c,
+        #8bc46a,
+        #ff9a3c,
+        #f3e9d2,
+        #4f8a39,
+        #e3b23c
+      )
+      border-box;
+  animation:
+    al-spin 5s linear infinite,
+    al-legend-glow 3.2s ease-in-out infinite alternate;
+}
+@keyframes al-spin {
+  to {
+    --al-ang: 360deg;
+  }
+}
+@keyframes al-legend-glow {
+  from {
+    box-shadow:
+      0 0 16px rgba(227, 178, 60, 0.45),
+      0 0 40px rgba(79, 138, 57, 0.25);
+  }
+  to {
+    box-shadow:
+      0 0 28px rgba(255, 154, 60, 0.7),
+      0 0 70px rgba(139, 196, 106, 0.4);
+  }
+}
+.al-cf.r-legendaire .al-cf-art::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(circle, rgba(255, 214, 120, 0.95) 0 1.5px, transparent 2px)
+      0 0 / 46px 58px,
+    radial-gradient(circle, rgba(167, 226, 125, 0.9) 0 1.5px, transparent 2px)
+      18px 24px / 62px 74px,
+    radial-gradient(circle, rgba(255, 154, 60, 0.9) 0 1px, transparent 1.6px)
+      8px 40px / 38px 50px;
+  animation: al-embers 7s linear infinite;
+}
+@keyframes al-embers {
+  from {
+    background-position:
+      0 0,
+      18px 24px,
+      8px 40px;
+  }
+  to {
+    background-position:
+      10px -116px,
+      -14px -148px,
+      22px -100px;
+  }
+}
+.al-cf.r-legendaire .al-cf-name {
+  background: linear-gradient(90deg, #e3b23c, #f3e9d2, #8bc46a, #e3b23c);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: al-name-shift 6s linear infinite;
+}
+@keyframes al-name-shift {
+  to {
+    background-position: -250% 0;
+  }
+}
+.al-reveal.r-legendaire {
+  --rc: #e3b23c;
+}
+.al-reveal.r-legendaire::before {
+  inset: -60%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgba(227, 178, 60, 0.5) 0deg 6deg,
+    transparent 6deg 18deg
+  );
+  filter: blur(6px);
+  opacity: 0.35;
+  mask-image: radial-gradient(circle, #000 0%, transparent 60%);
+  -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 60%);
+  animation: al-rays 24s linear infinite;
+}
+@keyframes al-rays {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.al-pack[data-phase='revealed']:has(.al-reveal.r-legendaire) .al-pack-stage {
+  border-color: #e3b23c;
+  box-shadow:
+    inset 0 0 60px rgba(227, 178, 60, 0.25),
+    0 0 40px rgba(79, 138, 57, 0.35);
+}
+.al-cf.r-super_rare {
+  animation: al-rare-glow 4s ease-in-out infinite alternate;
+}
+@keyframes al-rare-glow {
+  from {
+    box-shadow: 0 0 12px rgba(122, 166, 214, 0.35);
+  }
+  to {
+    box-shadow: 0 0 30px rgba(122, 166, 214, 0.65);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .al-cf.r-legendaire,
+  .al-cf.r-super_rare,
+  .al-cf.r-legendaire .al-cf-art::before,
+  .al-cf.r-legendaire .al-cf-name,
+  .al-reveal.r-legendaire::before {
+    animation: none;
   }
 }

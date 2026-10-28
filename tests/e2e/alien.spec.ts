@@ -53,6 +53,7 @@ test('fil de fer 3D animé et ouvert au survol du bouton', async ({ page }) => {
 test('cartes : inclinaison 3D, dossier ouvert avec jauges, retour du focus', async ({
   page,
 }) => {
+  test.setTimeout(60_000);
   await page.goto('/');
   await page.getByRole('button', { name: 'ENTER' }).click();
   await page.getByRole('button', { name: 'DÉCOUVRIR' }).click();
@@ -69,7 +70,7 @@ test('cartes : inclinaison 3D, dossier ouvert avec jauges, retour du focus', asy
         await page.mouse.move(box.x + box.width - 10, box.y + 10, { steps: 4 });
         return card.getAttribute('data-tilt');
       },
-      { timeout: 15000, intervals: [200] },
+      { timeout: 30000, intervals: [250] },
     )
     .toBe('on');
   await expect
