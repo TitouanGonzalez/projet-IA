@@ -89,6 +89,10 @@ function Cursor() {
     const el = ref.current;
     if (!el) return;
     const move = (e: PointerEvent) => {
+      if (e.pointerType !== 'mouse') {
+        el.style.opacity = '0';
+        return;
+      }
       el.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
       el.style.opacity = '1';
       const target = e.target as Element | null;
@@ -262,6 +266,7 @@ export default function AlienSite() {
   const [soundOn, setSoundOn] = useState(false);
   const [soundOk, setSoundOk] = useState(true);
   const [section, setSection] = useState('ACCUEIL');
+  const [menuOpen, setMenuOpen] = useState(false);
   const sound = useRef<Soundtrack | null>(null);
   const trigger = useRef<HTMLElement | null>(null);
   const coll = useCollection();
@@ -315,6 +320,16 @@ export default function AlienSite() {
     return () => io.disconnect();
   }, [phase]);
 
+  // Échap referme le menu des petits écrans.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [menuOpen]);
+
   const enter = () => {
     try {
       const s = createSoundtrack();
@@ -357,6 +372,7 @@ export default function AlienSite() {
     setSoundOn(s.on);
   };
   const go = (id: string) => {
+    setMenuOpen(false);
     sfx('click');
     document
       .getElementById(id)
@@ -427,7 +443,23 @@ export default function AlienSite() {
         >
           NOSTROMO
         </button>
-        <nav aria-label="Navigation" className="al-nav">
+        <button
+          type="button"
+          className="al-burger"
+          aria-expanded={menuOpen}
+          aria-controls="al-nav"
+          onClick={() => {
+            sfx('click');
+            setMenuOpen((o) => !o);
+          }}
+        >
+          {menuOpen ? 'FERMER' : 'MENU'}
+        </button>
+        <nav
+          id="al-nav"
+          aria-label="Navigation"
+          className={`al-nav${menuOpen ? ' is-open' : ''}`}
+        >
           <button type="button" onClick={() => go('dossiers')} {...hover}>
             :DOSSIERS
           </button>

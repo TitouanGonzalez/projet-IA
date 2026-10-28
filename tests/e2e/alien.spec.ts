@@ -724,3 +724,41 @@ test('journal : message à l’entrée, phrases spontanées, puis coupure à la 
   await page.clock.fastForward(90_000);
   await expect(lines).toHaveCount(0);
 });
+
+test('mobile : menu burger, navigation et fermeture, curseur caché au toucher', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'ENTER' }).click();
+  const burger = page.getByRole('button', { name: 'MENU' });
+  await expect(burger).toBeVisible();
+  await expect(burger).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByRole('button', { name: ':PLAN' })).toBeHidden();
+  await burger.click();
+  await expect(page.getByRole('button', { name: 'FERMER' })).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
+  await expect(page.getByRole('button', { name: ':PLAN' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: ':PLAN' })).toBeHidden();
+  await burger.click();
+  await page.getByRole('button', { name: ':PLAN' }).click();
+  await expect(page.getByRole('button', { name: 'MENU' })).toBeVisible();
+  await expect(page.getByRole('button', { name: ':PLAN' })).toBeHidden();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.getElementById('vaisseau')!.getBoundingClientRect().top,
+      ),
+    )
+    .toBeLessThan(200);
+  // Pas de défilement horizontal, pas de repères qui recouvrent le contenu.
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await expect(page.locator('.al-hud-left')).toBeHidden();
+});

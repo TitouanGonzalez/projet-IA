@@ -11,6 +11,7 @@
     "dev": "tsx app/server/index.ts --dev",
     "build": "tsc --noEmit && vite build",
     "start": "tsx app/server/index.ts",
+    "phone": "node scripts/phone.mjs",
     "launcher": "node scripts/launcher.mjs",
     "test:launcher": "node --test tests/launcher.test.mjs",
     "qualify:desktop": "node scripts/qualify-desktop.mjs",
