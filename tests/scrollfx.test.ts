@@ -4,6 +4,7 @@ import {
   FOCAL,
   RING_SPACING,
   cameraAt,
+  depthPose,
   clamp01,
   eggFromScroll,
   follow,
@@ -118,4 +119,47 @@ test('caméra : avance avec le défilement, dérive sauf si les mouvements sont 
   assert.ok(cameraAt(1000, 0, false) > cameraAt(500, 0, false));
   assert.ok(cameraAt(0, 10, false) > 0);
   assert.equal(cameraAt(0, 10, true), 0);
+});
+
+test('profondeur : une section en bas de l’écran est petite et transparente', () => {
+  const p = depthPose(900, 1900, 900);
+  assert.equal(p.atRest, false);
+  assert.equal(p.opacity, 0);
+  assert.equal(p.scale, 0.78);
+});
+
+test('profondeur : à sa place, aucune transformation', () => {
+  const p = depthPose(0, 1200, 900);
+  assert.equal(p.atRest, true);
+  assert.equal(p.scale, 1);
+  assert.equal(p.opacity, 1);
+});
+
+test('profondeur : grandit et s’opacifie en montant, sans retour en arrière', () => {
+  let lastScale = 0;
+  let lastOpacity = -1;
+  for (let top = 900; top >= 300; top -= 50) {
+    const p = depthPose(top, top + 1000, 900);
+    assert.ok(p.scale >= lastScale && p.opacity >= lastOpacity, String(top));
+    assert.ok(p.opacity >= 0 && p.opacity <= 1);
+    lastScale = p.scale;
+    lastOpacity = p.opacity;
+  }
+});
+
+test('profondeur : en sortant par le haut, elle grossit et s’efface', () => {
+  const p = depthPose(-1500, -100, 900);
+  assert.equal(p.atRest, false);
+  assert.ok(p.scale > 1 && p.scale <= 1.1 + 1e-9);
+  assert.ok(p.opacity < 0.2);
+});
+
+test('profondeur : l’origine est le centre de l’écran, et un écran vide ne casse rien', () => {
+  assert.equal(depthPose(100, 900, 800).originY, 300);
+  assert.deepEqual(depthPose(0, 0, 0), {
+    scale: 1,
+    opacity: 1,
+    originY: 0,
+    atRest: true,
+  });
 });

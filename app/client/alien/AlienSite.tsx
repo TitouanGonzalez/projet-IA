@@ -25,6 +25,7 @@ import {
   type RoomTarget,
 } from '../../shared/ship.js';
 import type { LogSection } from '../../shared/boardlog.js';
+import { depthPose } from '../../shared/scrollfx.js';
 import { Icon, photoFor, focus, reducedMotion, useTilt } from './shared.js';
 
 type Sfx = (kind: SoundKind) => void;
@@ -355,6 +356,53 @@ export default function AlienSite() {
     };
   }, [phase]);
 
+  // Les sections arrivent du fond du couloir : petites et transparentes en bas de l'écran, elles
+  // grandissent en montant, puis grossissent et s'effacent en sortant par le haut. Une section à sa
+  // place n'a aucune transformation (sinon ses éléments fixes et ses calculs de position seraient faussés).
+  useEffect(() => {
+    if (phase !== 'site' || reducedMotion()) return;
+    const sections = Array.from(
+      document.querySelectorAll<HTMLElement>('main .al-section'),
+    );
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const vh = window.innerHeight;
+      for (const el of sections) {
+        // offsetTop ignore la transformation en cours : la position de base ne bouge pas avec elle.
+        const top = el.offsetTop - window.scrollY;
+        const pose = depthPose(top, top + el.offsetHeight, vh);
+        if (pose.atRest) {
+          if (el.style.transform) {
+            el.style.transform = '';
+            el.style.opacity = '';
+            el.style.transformOrigin = '';
+          }
+        } else {
+          el.style.transformOrigin = `50% ${Math.round(pose.originY)}px`;
+          el.style.transform = `scale(${pose.scale.toFixed(4)})`;
+          el.style.opacity = pose.opacity.toFixed(3);
+        }
+      }
+    };
+    const schedule = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      for (const el of sections) {
+        el.style.transform = '';
+        el.style.opacity = '';
+        el.style.transformOrigin = '';
+      }
+    };
+  }, [phase]);
+
   // Échap referme le menu des petits écrans.
   useEffect(() => {
     if (!menuOpen) return;
@@ -409,9 +457,18 @@ export default function AlienSite() {
   const go = (id: string) => {
     setMenuOpen(false);
     sfx('click');
-    document
-      .getElementById(id)
-      ?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth' });
+    const el = document.getElementById(id);
+    if (!el) return;
+    // Position dans la page sans tenir compte de l'échelle des sections (scrollIntoView
+    // viserait le rectangle déformé d'une section encore « loin dans le couloir »).
+    let top = 0;
+    for (
+      let n: HTMLElement | null = el;
+      n;
+      n = n.offsetParent as HTMLElement | null
+    )
+      top += n.offsetTop;
+    window.scrollTo({ top, behavior: reducedMotion() ? 'auto' : 'smooth' });
   };
   // Son de survol des boutons à la souris seulement (pas au clavier ni au toucher).
   const hover = {

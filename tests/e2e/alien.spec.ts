@@ -817,3 +817,33 @@ test('défilement : sans mouvement demandé, tout reste affiché et immobile', a
     '0',
   );
 });
+
+test('défilement : les sections arrivent du fond du couloir puis se posent', async ({
+  page,
+}) => {
+  await enterSite(page);
+  const read = (id: string) =>
+    page.evaluate((i) => {
+      const el = document.getElementById(i)!;
+      return { transform: el.style.transform, opacity: el.style.opacity };
+    }, id);
+  // Une section encore loin dans le couloir est réduite et transparente.
+  const far = await read('terminal');
+  expect(far.transform).toContain('scale(0.78');
+  expect(Number(far.opacity)).toBe(0);
+  // Arrivée sur une section : elle est posée, sans aucune transformation.
+  await page.getByRole('button', { name: ':TERMINAL' }).click();
+  await expect
+    .poll(() => read('terminal'))
+    .toEqual({ transform: '', opacity: '' });
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.getElementById('terminal')!.getBoundingClientRect().top,
+      ),
+    )
+    .toBeLessThan(5);
+  // La section d'avant est passée derrière nous : elle s'est effacée.
+  const behind = await read('detecteur');
+  expect(Number(behind.opacity)).toBeLessThan(1);
+});

@@ -81,3 +81,31 @@ export function ringAlpha(distance: number, rings: number): number {
 export function cameraAt(scrollY: number, seconds: number, still: boolean) {
   return scrollY * 0.9 + (still ? 0 : seconds * 24);
 }
+
+export interface DepthPose {
+  scale: number;
+  opacity: number;
+  // Point d'origine de l'échelle : le centre de l'écran, vu depuis le haut de la section.
+  originY: number;
+  // Vrai quand la section est à sa place normale (aucune transformation à appliquer).
+  atRest: boolean;
+}
+
+const smooth = (t: number): number => t * t * (3 - 2 * t);
+
+// Une section qui arrive « du fond du couloir » : tout en bas de l'écran elle est petite et
+// transparente, elle grandit jusqu'à sa taille normale en montant, et quand elle sort par le haut
+// elle grossit un peu et s'efface, comme si on la traversait. top et bottom sont les bords de la
+// section par rapport au haut de l'écran, vh la hauteur de l'écran.
+export function depthPose(top: number, bottom: number, vh: number): DepthPose {
+  if (!(vh > 0)) return { scale: 1, opacity: 1, originY: 0, atRest: true };
+  const entering = smooth(clamp01((vh - top) / (vh * 0.55)));
+  const leaving = clamp01((vh * 0.4 - bottom) / (vh * 0.4));
+  const atRest = entering >= 1 && leaving <= 0;
+  return {
+    scale: (0.78 + 0.22 * entering) * (1 + 0.1 * leaving),
+    opacity: entering * (1 - 0.85 * leaving),
+    originY: vh / 2 - top,
+    atRest,
+  };
+}
