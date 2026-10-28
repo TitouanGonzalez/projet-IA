@@ -12,6 +12,9 @@ Page de fan, non officielle. Alien et ses personnages appartiennent à 20th Cent
 - Un détecteur de mouvement : un radar en éventail avec balayage, des contacts cachés qui s’approchent de la sonde, un bip qui accélère quand on s’approche et une impulsion qui révèle tout. Rester trop longtemps collé à un contact fait perdre la partie.
 - Un jeu dans le terminal MU/TH/UR : six messages pour convaincre la Compagnie d’envoyer de l’aide. On répond en cliquant sur des phrases, et pour deux messages on peut aussi écrire le sien, que la Compagnie analyse. Trois phrases toutes faites sont proposées à chaque fois, pour ne jamais rester bloqué. Gagné si elle accepte, perdu sinon, avec six fins différentes.
 - Des œufs à ouvrir : un nouvel œuf toutes les 10 minutes, dix au maximum. Chaque œuf cache une carte parmi 24, de cinq raretés (commune, peu commune, rare, super rare, légendaire). Une page collection montre les cartes obtenues, les doublons et les cartes encore verrouillées.
+- Un faux scan de l’équipage au démarrage, avant le bouton ENTER.
+- Un plan du Nostromo en fil de fer : six salles, chacune avec un petit récit, quatre qui ouvrent une partie du site (pont : terminal, infirmerie : dossiers, cale : détecteur, sas : œufs).
+- Un journal de bord : MU/TH/UR écrit seule des phrases selon la section, et réagit à certaines actions. Il se coupe avec un bouton.
 - De petits sons d’interaction discrets au survol et au clic.
 - Une musique d’ambiance rétro-futuriste synthétisée dans le navigateur, qu’on peut couper avec les sons.
 

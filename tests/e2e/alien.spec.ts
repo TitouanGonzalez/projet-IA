@@ -298,12 +298,14 @@ test('terminal : le journal est annoncé et les jauges sont lisibles', async ({
   page,
 }) => {
   await openTerminal(page);
-  await expect(page.getByRole('log')).toBeVisible();
+  await expect(
+    page.getByRole('log', { name: 'Échange avec la Compagnie' }),
+  ).toBeVisible();
   await expect(page.getByRole('meter')).toHaveCount(3);
   await answer(page, null);
-  await expect(page.getByRole('log')).toContainText(
-    'Comment ouvres-tu ton message',
-  );
+  await expect(
+    page.getByRole('log', { name: 'Échange avec la Compagnie' }),
+  ).toContainText('Comment ouvres-tu ton message');
 });
 
 test('terminal : écrire son propre argument, message vide refusé', async ({
@@ -627,4 +629,98 @@ test('œufs : au clavier, et la pastille du menu compte les œufs', async ({
   await expect(page.getByRole('button', { name: /:COLLECTION/ })).toContainText(
     '2',
   );
+});
+
+async function enterSite(page: import('@playwright/test').Page) {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'ENTER' }).click();
+  await expect(page.locator('[data-phase="site"]')).toBeVisible();
+}
+
+test('démarrage : le faux scan de l’équipage se termine et signale un inconnu', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const scan = page.locator('.al-scanlist');
+  await expect(scan).toHaveAttribute('data-done', 'true', { timeout: 30_000 });
+  await expect(scan).toContainText('ASH');
+  await expect(scan).toContainText('SIGNAL NON IDENTIFIÉ : 1');
+  await expect(scan).toHaveAttribute('aria-hidden', 'true');
+  await expect(page.getByRole('button', { name: 'ENTER' })).toBeEnabled();
+});
+
+test('plan : une salle ouvre son récit, son bouton et le journal', async ({
+  page,
+}) => {
+  await enterSite(page);
+  await page.getByRole('button', { name: ':PLAN' }).click();
+  const ship = page.locator('.al-ship');
+  await expect(ship).toHaveAttribute('data-explored', '0');
+  await page.getByRole('button', { name: 'LA CALE', exact: true }).click();
+  await expect(ship).toHaveAttribute('data-room', 'cale');
+  await expect(ship).toHaveAttribute('data-explored', '1');
+  await expect(page.locator('.al-ship-panel')).toContainText('conteneurs');
+  await expect(
+    page.getByRole('button', { name: 'LANCER LE DÉTECTEUR' }),
+  ).toBeVisible();
+  await expect(page.locator('.al-log-line').last()).toContainText('PONT C');
+  await expect(page.locator('.al-ship-count')).toContainText('1/6');
+});
+
+test('plan : le bouton d’une salle emmène vers la bonne partie du site', async ({
+  page,
+}) => {
+  await enterSite(page);
+  await page.getByRole('button', { name: ':PLAN' }).click();
+  await page.getByRole('button', { name: 'LE PONT', exact: true }).click();
+  await page.getByRole('button', { name: 'APPELER LA COMPAGNIE' }).click();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.getElementById('terminal')!.getBoundingClientRect().top,
+      ),
+    )
+    .toBeLessThan(300);
+});
+
+test('plan : deux salles sans bouton, et toutes les visiter est signalé', async ({
+  page,
+}) => {
+  await enterSite(page);
+  await page.getByRole('button', { name: ':PLAN' }).click();
+  await page.getByRole('button', { name: 'LA SALLE DES MACHINES' }).click();
+  await expect(page.locator('.al-ship-panel .al-btn')).toHaveCount(0);
+  for (const name of [
+    'LE PONT',
+    'L’INFIRMERIE',
+    'LA CALE',
+    'LE SAS DE QUARANTAINE',
+    'LA NAVETTE DE SECOURS',
+  ])
+    await page.getByRole('button', { name, exact: true }).click();
+  await expect(page.locator('.al-ship')).toHaveAttribute('data-explored', '6');
+  await expect(page.locator('.al-ship-count')).toContainText('TOUT EST VU');
+  await expect(
+    page.locator('.al-log-line', { hasText: 'TOUS LES COMPARTIMENTS' }),
+  ).toBeVisible({ timeout: 5000 });
+});
+
+test('journal : message à l’entrée, phrases spontanées, puis coupure à la demande', async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.goto('/');
+  await page.getByRole('button', { name: 'ENTER' }).click();
+  const lines = page.locator('.al-log-line');
+  await expect(lines.first()).toContainText('LIAISON ÉTABLIE');
+  await page.clock.fastForward(8000);
+  await expect(lines).toHaveCount(2);
+  await page.clock.fastForward(12_000);
+  await expect(lines).toHaveCount(0);
+  await page.getByRole('button', { name: 'JOURNAL : ON' }).click();
+  await expect(
+    page.getByRole('button', { name: 'JOURNAL : OFF' }),
+  ).toBeVisible();
+  await page.clock.fastForward(90_000);
+  await expect(lines).toHaveCount(0);
 });

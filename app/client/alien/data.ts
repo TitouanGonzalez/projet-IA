@@ -115,3 +115,21 @@ export const bootLines = [
   '// LOADING CREW FILES',
   '// SIGNAL DETECTED',
 ];
+
+// Faux scan de l'équipage affiché sur l'écran de démarrage. Texte de décor, rien de réel.
+export interface ScanRow {
+  name: string;
+  status: string;
+  alert?: boolean;
+}
+export const crewScan: ScanRow[] = [
+  { name: 'DALLAS', status: 'SIGNES NORMAUX' },
+  { name: 'KANE', status: 'SOMMEIL PROFOND' },
+  { name: 'RIPLEY', status: 'SIGNES NORMAUX' },
+  { name: 'LAMBERT', status: 'SIGNES NORMAUX' },
+  { name: 'PARKER', status: 'SIGNES NORMAUX' },
+  { name: 'BRETT', status: 'SIGNES NORMAUX' },
+  { name: 'ASH', status: 'ILLISIBLE', alert: true },
+  { name: 'JONESY', status: 'FÉLIN, ÉVEILLÉ' },
+];
+export const scanAlert = 'SIGNAL NON IDENTIFIÉ : 1';

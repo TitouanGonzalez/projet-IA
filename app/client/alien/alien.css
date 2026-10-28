@@ -1849,3 +1849,238 @@
     animation: none;
   }
 }
+
+/* Scan de l'équipage sur l'écran de démarrage */
+.al-scanlist {
+  width: min(520px, 88vw);
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: rgba(8, 12, 7, 0.7);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+.al-scanlist-title {
+  margin: 0 0 8px;
+  color: var(--dim);
+}
+.al-scanlist ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.al-scanlist li {
+  display: grid;
+  grid-template-columns: 76px 1fr minmax(120px, auto);
+  align-items: center;
+  gap: 10px;
+  min-height: 18px;
+}
+.al-scan-bar {
+  display: block;
+  height: 6px;
+  border: 1px solid var(--line);
+}
+.al-scan-bar i {
+  display: block;
+  height: 100%;
+  background: var(--accent-lit);
+  box-shadow: 0 0 6px var(--accent);
+}
+.al-scan-status {
+  white-space: nowrap;
+  color: var(--accent-lit);
+  text-align: right;
+}
+.al-scanlist li.is-alert .al-scan-status {
+  color: #ff9a3c;
+}
+.al-scanlist li.is-alert .al-scan-bar i {
+  background: #ff9a3c;
+  box-shadow: 0 0 6px #ff9a3c;
+}
+.al-scanlist-alert {
+  margin: 10px 0 0;
+  color: #ff9a3c;
+  text-shadow: 0 0 8px rgba(255, 154, 60, 0.6);
+}
+@media (max-width: 640px) {
+  .al-scanlist li {
+    grid-template-columns: 64px 1fr auto;
+    gap: 8px;
+    font-size: 10px;
+  }
+  .al-scan-status {
+    max-width: 108px;
+  }
+}
+
+/* Plan du Nostromo */
+.al-ship {
+  display: grid;
+  gap: 14px;
+  max-width: 940px;
+  margin-top: 32px;
+}
+.al-ship-svg {
+  width: 100%;
+  height: auto;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(rgba(79, 138, 57, 0.08) 1px, transparent 1px) 0 0 / 100%
+      28px,
+    #0a0d09;
+  filter: drop-shadow(0 0 6px rgba(79, 138, 57, 0.4));
+}
+.al-ship-room {
+  cursor: pointer;
+  color: var(--dim);
+}
+.al-ship-room rect {
+  fill: rgba(79, 138, 57, 0.05);
+  transition:
+    fill 0.2s,
+    stroke 0.2s;
+}
+.al-ship-room:hover rect {
+  fill: rgba(79, 138, 57, 0.22);
+  stroke: var(--accent-lit);
+}
+.al-ship-room.is-seen {
+  color: var(--accent-lit);
+}
+.al-ship-room.is-current rect {
+  fill: rgba(79, 138, 57, 0.35);
+  stroke: var(--accent-lit);
+  stroke-width: 2.4;
+  filter: drop-shadow(0 0 8px var(--accent-lit));
+}
+.al-ship-label {
+  fill: currentColor;
+  stroke: none;
+  font-family: var(--mono);
+  font-size: 16px;
+  letter-spacing: 0.1em;
+}
+.al-ship-sweep {
+  stroke: var(--accent-lit);
+  stroke-width: 1.2;
+  opacity: 0.55;
+  animation: al-ship-sweep 7s ease-in-out infinite alternate;
+}
+@keyframes al-ship-sweep {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(740px);
+  }
+}
+.al-ship-rooms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.al-ship-rooms button[data-seen='true']::after {
+  content: ' ✓';
+}
+.al-root .al-ship-count {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--accent-lit);
+}
+.al-ship-panel {
+  min-height: 190px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  background: rgba(8, 12, 7, 0.6);
+}
+.al-ship-panel .al-btn {
+  margin-top: 14px;
+}
+.al-root .al-ship-deck {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--dim);
+}
+.al-root .al-ship-story {
+  margin: 8px 0 0;
+  max-width: 62ch;
+  font-size: 14px;
+  color: var(--dim);
+}
+
+/* Journal de bord de MU/TH/UR */
+.al-log {
+  position: fixed;
+  right: 28px;
+  bottom: 112px;
+  z-index: 46;
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+  width: min(360px, calc(100vw - 32px));
+  pointer-events: none;
+}
+.al-log-lines {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+}
+.al-log-line {
+  margin: 0;
+  padding: 8px 12px;
+  border-left: 2px solid var(--accent-lit);
+  background: rgba(8, 12, 7, 0.88);
+  color: var(--accent-lit);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 8px rgba(79, 138, 57, 0.7);
+  animation: al-log-in 0.5s ease-out;
+}
+@keyframes al-log-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.al-root button.al-log-toggle {
+  min-height: 32px;
+  padding: 2px 10px;
+  border: 1px solid var(--line);
+  background: rgba(8, 12, 7, 0.88);
+  color: var(--dim);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  pointer-events: auto;
+}
+.al-root button.al-log-toggle:hover,
+.al-root button.al-log-toggle:focus-visible {
+  color: var(--accent-lit);
+  border-color: var(--accent-lit);
+}
+@media (max-width: 640px) {
+  .al-log {
+    right: 16px;
+    bottom: 84px;
+  }
+  .al-log-line {
+    font-size: 11px;
+  }
+  .al-log-line:nth-last-child(n + 3) {
+    display: none;
+  }
+  .al-section {
+    padding-top: 170px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .al-ship-sweep,
+  .al-log-line {
+    animation: none;
+  }
+}

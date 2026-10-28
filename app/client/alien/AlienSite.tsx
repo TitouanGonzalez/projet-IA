@@ -13,6 +13,17 @@ import MotionTracker from './MotionTracker.js';
 import { CollectionView, PackOpening, useCollection } from './Cards.js';
 import MuthurTerminal from './MuthurTerminal.js';
 import Ovomorph from './Ovomorph.js';
+import CrewScan from './CrewScan.js';
+import ShipMap from './ShipMap.js';
+import { BoardLog, useBoardLog } from './BoardLog.js';
+import {
+  exploration,
+  visit,
+  type Room,
+  type RoomId,
+  type RoomTarget,
+} from '../../shared/ship.js';
+import type { LogSection } from '../../shared/boardlog.js';
 import { Icon, photoFor, focus, reducedMotion, useTilt } from './shared.js';
 
 type Sfx = (kind: SoundKind) => void;
@@ -254,6 +265,17 @@ export default function AlienSite() {
   const sound = useRef<Soundtrack | null>(null);
   const trigger = useRef<HTMLElement | null>(null);
   const coll = useCollection();
+  const [visited, setVisited] = useState<RoomId[]>([]);
+  const beepLine = useCallback(() => sound.current?.beep(330), []);
+  const logSection = ({
+    ACCUEIL: 'accueil',
+    DOSSIERS: 'dossiers',
+    PLAN: 'plan',
+    DÉTECTEUR: 'detecteur',
+    TERMINAL: 'terminal',
+    COLLECTION: 'collection',
+  }[section] ?? 'accueil') as LogSection;
+  const log = useBoardLog(logSection, phase === 'site', beepLine);
   const [session] = useState(() =>
     String(Math.floor(100000 + Math.random() * 900000)),
   );
@@ -274,6 +296,7 @@ export default function AlienSite() {
     const ids: Record<string, string> = {
       accueil: 'ACCUEIL',
       dossiers: 'DOSSIERS',
+      vaisseau: 'PLAN',
       detecteur: 'DÉTECTEUR',
       terminal: 'TERMINAL',
       collection: 'COLLECTION',
@@ -304,10 +327,27 @@ export default function AlienSite() {
       setSoundOk(false);
     }
     setPhase('site');
+    log.event('enter');
   };
   const sfx = useCallback<Sfx>((kind) => sound.current?.play(kind), []);
   const beep = useCallback((freq: number) => sound.current?.beep(freq), []);
-  const chime = useCallback((level: number) => sound.current?.chime(level), []);
+  const { event: logEvent, say: logSay } = log;
+  const chime = useCallback(
+    (level: number) => {
+      sound.current?.chime(level);
+      if (level >= 5) logEvent('legendary');
+    },
+    [logEvent],
+  );
+  const visitRoom = (room: Room) => {
+    sfx('open');
+    const next = visit(visited, room.id);
+    setVisited(next);
+    logSay(room.log);
+    if (!visited.includes(room.id) && exploration(next).complete)
+      window.setTimeout(() => logEvent('explored'), 1200);
+  };
+  const goTarget = (target: RoomTarget) => go(target);
   const toggleSound = () => {
     const s = sound.current;
     if (!s) return;
@@ -331,6 +371,7 @@ export default function AlienSite() {
   const openDossier = (d: Dossier, el: HTMLElement) => {
     trigger.current = el;
     sfx('open');
+    logEvent('dossier');
     setOpen(d);
   };
   const closeDossier = useCallback(() => {
@@ -362,6 +403,7 @@ export default function AlienSite() {
             <circle cx="32" cy="50" r="2" />
           </svg>
           <h1 className="al-sr">Nostromo, dossiers de l’équipage</h1>
+          <CrewScan active={intro.done} />
           <button type="button" className="al-btn" autoFocus onClick={enter}>
             ENTER
           </button>
@@ -388,6 +430,9 @@ export default function AlienSite() {
         <nav aria-label="Navigation" className="al-nav">
           <button type="button" onClick={() => go('dossiers')} {...hover}>
             :DOSSIERS
+          </button>
+          <button type="button" onClick={() => go('vaisseau')} {...hover}>
+            :PLAN
           </button>
           <button type="button" onClick={() => go('detecteur')} {...hover}>
             :DÉTECTEUR
@@ -469,6 +514,17 @@ export default function AlienSite() {
           </ul>
         </section>
 
+        <section id="vaisseau" className="al-section al-ship-section">
+          <p className="al-eyebrow">{'// PLAN DU NOSTROMO'}</p>
+          <h2 className="al-h2">Visite le vaisseau.</h2>
+          <p className="al-lead">
+            Six compartiments, six petits récits. Quatre d’entre eux ouvrent une
+            partie du site : le pont mène au terminal, l’infirmerie aux
+            dossiers, la cale au détecteur et le sas aux œufs.
+          </p>
+          <ShipMap visited={visited} onVisit={visitRoom} onGo={goTarget} />
+        </section>
+
         <section id="detecteur" className="al-section al-trk-section">
           <div>
             <p className="al-eyebrow">{'// DÉTECTEUR DE MOUVEMENT'}</p>
@@ -485,7 +541,10 @@ export default function AlienSite() {
           <MotionTracker
             beep={beep}
             onPing={() => sfx('open')}
-            onLose={() => sfx('close')}
+            onLose={() => {
+              sfx('close');
+              logEvent('trackerLost');
+            }}
           />
         </section>
 
@@ -538,6 +597,7 @@ export default function AlienSite() {
         </p>
       </footer>
 
+      <BoardLog lines={log.lines} shown={log.shown} onToggle={log.toggle} />
       <Hud
         lines={[`WELCOME USER ${user}`, 'NAV', `> NOSTROMO | ${section}`]}
         session={session}
