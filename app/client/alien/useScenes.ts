@@ -49,10 +49,10 @@ export function useScenes(enabled: boolean, onActive: (id: string) => void) {
         const ty = Math.round(p.shift - p.offset);
         el.style.transformOrigin = `50% ${Math.round(vh / 2 - p.shift + p.offset)}px`;
         el.style.transform =
-          p.scale === 1
+          p.scale >= 0.9999 && p.scale <= 1.0001
             ? `translateY(${ty}px)`
             : `translateY(${ty}px) scale(${p.scale.toFixed(4)})`;
-        el.style.opacity = p.opacity >= 1 ? '' : p.opacity.toFixed(3);
+        el.style.opacity = p.opacity >= 0.999 ? '' : p.opacity.toFixed(3);
         el.style.pointerEvents = p.interactive ? '' : 'none';
         // Scène invisible : on met en pause ses animations et ses canvas.
         el.classList.toggle('is-away', p.opacity < 0.02);
@@ -125,6 +125,9 @@ export function useScenes(enabled: boolean, onActive: (id: string) => void) {
       const i = scene ? scenes.indexOf(scene) : -1;
       if (!el || !scene || i < 0) return;
       const p = scenePose(i, window.scrollY, tl);
+      // Un clic à la souris sur un élément déjà visible, même à moitié, ne doit pas faire défiler la
+      // page sous le pointeur (le clic serait perdu). Seul le clavier recadre.
+      if (p.interactive && !el.matches(':focus-visible')) return;
       const top = within(el, scene) - p.offset + p.shift;
       const out = top < 90 || top + el.offsetHeight > vh - 20;
       if (!p.interactive || out) {

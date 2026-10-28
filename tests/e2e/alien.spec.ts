@@ -943,3 +943,23 @@ test('défilement : au clavier, Tab amène la scène et l’élément en vue', a
   expect(box.y).toBeGreaterThan(80);
   expect(box.y + box.height).toBeLessThan(page.viewportSize()!.height);
 });
+
+test('dossiers : une carte à moitié visible s’ouvre au clic sans faire défiler la page', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1240, height: 775 });
+  await enterSite(page);
+  await jump(page, 'dossiers');
+  const y0 = await page.evaluate(() => Math.round(scrollY));
+  const last = page.locator('.al-card').nth(4);
+  const box = (await last.boundingBox())!;
+  // La carte dépasse le bas de l'écran : on clique sur sa partie visible.
+  expect(box.y + box.height).toBeGreaterThan(775);
+  const visible = 775 - box.y;
+  await page.mouse.click(box.x + box.width / 2, box.y + visible / 2);
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(
+    page.getByRole('dialog').getByRole('heading', { name: 'Jonesy' }),
+  ).toBeVisible();
+  expect(await page.evaluate(() => Math.round(scrollY))).toBe(y0);
+});
