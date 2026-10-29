@@ -18,8 +18,8 @@ Le site tourne sur ton ordinateur, dans ton navigateur. Il n'y a rien à créer 
 ### 2. Récupérer et installer
 
 ```bash
-git clone https://github.com/TitouanGonzalez/pfe.git
-cd pfe
+git clone https://github.com/TitouanGonzalez/projet-IA.git
+cd projet-IA
 npm ci
 ```
 
@@ -74,7 +74,6 @@ npm run scan       # contrôle avant publication
 - Un écran de démarrage de terminal, avec un faux scan de l'équipage.
 - Un œuf en fil de fer 3D qui suit la souris et s'ouvre quand on descend.
 - Six dossiers de personnages en cartes inclinées en 3D.
-- Un détecteur de mouvement à la souris, où rester trop près d'un contact fait perdre.
 - Un jeu à choix dans le terminal de l'ordinateur de bord, avec des phrases toutes faites ou un texte libre.
 - Des œufs à ouvrir pour collectionner 24 cartes de cinq raretés, avec des effets spéciaux pour les légendaires.
 - Un journal de bord où MU/TH/UR parle seule, et un fond en couloir de vaisseau qui avance avec le défilement.

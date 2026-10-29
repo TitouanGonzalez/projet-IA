@@ -1,7 +1,7 @@
 // Journal de bord : phrases de MU/TH/UR qui apparaissent seules, selon la partie du site où
 // la personne se trouve. Logique pure (aucun accès au navigateur), pour pouvoir la tester.
 export type LogSection =
-  'accueil' | 'dossiers' | 'detecteur' | 'terminal' | 'collection' | 'apropos';
+  'accueil' | 'dossiers' | 'terminal' | 'collection' | 'apropos';
 
 export const AMBIENT_MIN = 22_000;
 export const AMBIENT_MAX = 38_000;
@@ -19,11 +19,6 @@ export const AMBIENT: Record<LogSection, string[]> = {
     'DOSSIERS DE L’ÉQUIPAGE : LECTURE AUTORISÉE.',
     'UN DOSSIER A ÉTÉ MODIFIÉ SANS VOTRE ACCORD. IGNORÉ.',
     'LES CONSTANTES DE L’ÉQUIPAGE RESTENT STABLES.',
-  ],
-  detecteur: [
-    'ÉCHO FAIBLE SUR LE PONT C. PROBABLEMENT UNE PANNE.',
-    'LA MARGE D’ERREUR DU DÉTECTEUR EST DE 12 POUR CENT.',
-    'ATTENTION : UN CONTACT SE DÉPLACE PLUS VITE QUE PRÉVU.',
   ],
   terminal: [
     'LIAISON COMPAGNIE : LATENCE ESTIMÉE, SIX MINUTES.',
@@ -45,7 +40,6 @@ export const AMBIENT: Record<LogSection, string[]> = {
 export const EVENTS = {
   enter: 'LIAISON ÉTABLIE. BIENVENUE À BORD DU NOSTROMO.',
   dossier: 'DOSSIER CONSULTÉ. L’ACCÈS EST ENREGISTRÉ.',
-  trackerLost: 'LIAISON PERDUE AVEC LE DÉTECTEUR. CONTACT À PROXIMITÉ.',
   legendary: 'ALERTE : SIGNATURE RARE DÉTECTÉE DANS LA COLLECTION.',
   duplicate: 'DOUBLON ENREGISTRÉ. LE VAISSEAU GARDE TOUT.',
   won: 'LA COMPAGNIE A RÉPONDU. DE L’AIDE EST EN ROUTE.',

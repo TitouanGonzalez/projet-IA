@@ -9,7 +9,6 @@ import {
 } from 'react';
 import { bootLines, dossiers, type Dossier } from './data.js';
 import { createSoundtrack, type SoundKind, type Soundtrack } from './audio.js';
-import MotionTracker from './MotionTracker.js';
 import { CollectionView, PackOpening, useCollection } from './Cards.js';
 import MuthurTerminal from './MuthurTerminal.js';
 import Ovomorph from './Ovomorph.js';
@@ -26,7 +25,6 @@ type Sfx = (kind: SoundKind) => void;
 const SECTION_NAMES: Record<string, string> = {
   accueil: 'ACCUEIL',
   dossiers: 'DOSSIERS',
-  detecteur: 'DÉTECTEUR',
   terminal: 'TERMINAL',
   collection: 'COLLECTION',
   apropos: 'À PROPOS',
@@ -279,7 +277,6 @@ export default function AlienSite() {
   const logSection = ({
     ACCUEIL: 'accueil',
     DOSSIERS: 'dossiers',
-    DÉTECTEUR: 'detecteur',
     TERMINAL: 'terminal',
     COLLECTION: 'collection',
     'À PROPOS': 'apropos',
@@ -466,9 +463,6 @@ export default function AlienSite() {
           <button type="button" onClick={() => go('dossiers')} {...hover}>
             :DOSSIERS
           </button>
-          <button type="button" onClick={() => go('detecteur')} {...hover}>
-            :DÉTECTEUR
-          </button>
           <button type="button" onClick={() => go('terminal')} {...hover}>
             :TERMINAL
           </button>
@@ -544,33 +538,6 @@ export default function AlienSite() {
               <DossierCard key={d.id} d={d} onOpen={openDossier} sfx={sfx} />
             ))}
           </ul>
-        </section>
-
-        <section
-          id="detecteur"
-          className="al-section al-trk-section al-scene"
-          data-scene
-        >
-          <div>
-            <p className="al-eyebrow">{'// DÉTECTEUR DE MOUVEMENT'}</p>
-            <h2 className="al-h2">Rien ne bouge. Vraiment ?</h2>
-            <p className="al-lead">
-              Déplace la sonde avec ta souris, ou avec les flèches du clavier.
-              Plus tu t’approches d’un contact caché, plus le bip s’accélère et
-              monte. Un clic, ou la barre d’espace, lance une impulsion qui
-              révèle tout un instant. Mais les contacts s’approchent de ta sonde
-              : reste trop longtemps collé à l’un d’eux et la liaison est
-              perdue.
-            </p>
-          </div>
-          <MotionTracker
-            beep={beep}
-            onPing={() => sfx('open')}
-            onLose={() => {
-              sfx('close');
-              logEvent('trackerLost');
-            }}
-          />
         </section>
 
         <section

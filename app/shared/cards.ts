@@ -208,7 +208,7 @@ export const CARDS: Card[] = [
     name: 'Le détecteur de mouvement',
     rarity: 'commune',
     icon: 'tracker',
-    text: 'Il bipe de plus en plus vite quand quelque chose approche. Tu l’as essayé plus haut.',
+    text: 'Il bipe de plus en plus vite quand quelque chose approche.',
   },
   {
     id: 'navette',

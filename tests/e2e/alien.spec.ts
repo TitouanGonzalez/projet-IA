@@ -238,58 +238,6 @@ test('le jeu de vaisseau n’est plus sur la page', async ({ page }) => {
   await expect(page.getByText('SURVIVRE')).toHaveCount(0);
 });
 
-test('détecteur : la sonde suit la souris et la distance s’affiche', async ({
-  page,
-}) => {
-  await page.goto('/');
-  await page.getByRole('button', { name: 'ENTER' }).click();
-  await page.getByRole('button', { name: ':DÉTECTEUR' }).click();
-  const tracker = page.locator('.al-trk');
-  await expect(tracker).toBeVisible();
-  await expect(tracker).toHaveAttribute('data-probe-x', 'none');
-  await settle(page, '.al-trk-canvas');
-  const canvas = page.locator('.al-trk-canvas');
-  const box = (await canvas.boundingBox())!;
-  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5);
-  await expect(tracker).not.toHaveAttribute('data-probe-x', 'none');
-  const nearest = Number(await tracker.getAttribute('data-nearest'));
-  expect(nearest).toBeGreaterThanOrEqual(0);
-  await expect(page.locator('.al-trk-readout')).toHaveText(/^\d\d\.\d\d$/);
-  expect(['far', 'suspect', 'close']).toContain(
-    await tracker.getAttribute('data-state'),
-  );
-  await page.mouse.move(5, 5);
-  await expect(tracker).toHaveAttribute('data-probe-x', 'none');
-  await expect(page.locator('.al-trk-readout')).toHaveText('--.--');
-});
-
-test('détecteur : clavier et impulsion avec recharge', async ({ page }) => {
-  await page.goto('/');
-  await page.getByRole('button', { name: 'ENTER' }).click();
-  await page.getByRole('button', { name: ':DÉTECTEUR' }).click();
-  const tracker = page.locator('.al-trk');
-  await settle(page, '.al-trk-canvas');
-  await page.locator('.al-trk-canvas').focus();
-  await page.keyboard.press('ArrowRight');
-  await expect(tracker).not.toHaveAttribute('data-probe-x', 'none');
-  const x0 = Number(await tracker.getAttribute('data-probe-x'));
-  await page.keyboard.press('ArrowRight');
-  await page.keyboard.press('ArrowRight');
-  await expect
-    .poll(async () => Number(await tracker.getAttribute('data-probe-x')))
-    .toBeGreaterThan(x0);
-  await expect
-    .poll(async () => Number(await tracker.getAttribute('data-charge')))
-    .toBeGreaterThanOrEqual(0.99);
-  await page.keyboard.press(' ');
-  await expect
-    .poll(async () => Number(await tracker.getAttribute('data-charge')))
-    .toBeLessThan(0.5);
-  await expect(page.locator('.al-trk-caption')).toContainText('contact', {
-    ignoreCase: true,
-  });
-});
-
 async function openTerminal(page: import('@playwright/test').Page) {
   await page.goto('/');
   await page.getByRole('button', { name: 'ENTER' }).click();
@@ -402,69 +350,6 @@ test('terminal : écrire son propre argument, message vide refusé', async ({
   await expect(term).toContainText('RÉFÉRENCE AU RÈGLEMENT NOTÉE');
   await expect(term).toHaveAttribute('data-signal', '2');
   await expect(term).toHaveAttribute('data-phase', 'choice');
-});
-
-test('détecteur : rester collé à un contact fait perdre, puis on relance', async ({
-  page,
-}) => {
-  await page.goto('/');
-  await page.getByRole('button', { name: 'ENTER' }).click();
-  await page.getByRole('button', { name: ':DÉTECTEUR' }).click();
-  await settle(page, '.al-trk-canvas');
-  const tracker = page.locator('.al-trk');
-  const canvas = page.locator('.al-trk-canvas');
-  const box = (await canvas.boundingBox())!;
-  await expect(tracker).toHaveAttribute('data-lost', 'false');
-  // On pose la sonde sur le contact le plus proche, en le suivant s'il bouge.
-  const follow = async () => {
-    const raw = (await tracker.getAttribute('data-contacts')) ?? '[]';
-    const [cx, cy] = (JSON.parse(raw) as [number, number][])[0];
-    await page.mouse.move(
-      box.x + (cx * box.width) / 560,
-      box.y + (cy * box.height) / 480,
-    );
-  };
-  await expect
-    .poll(
-      async () => {
-        await follow();
-        return tracker.getAttribute('data-lost');
-      },
-      { timeout: 15000, intervals: [150] },
-    )
-    .toBe('true');
-  await expect(page.getByRole('alert')).toContainText(
-    'CONTACT. LIAISON PERDUE.',
-  );
-  await expect(page.locator('.al-trk-caption')).toContainText('Liaison perdue');
-  await page.getByRole('button', { name: 'RELANCER' }).click();
-  await expect(tracker).toHaveAttribute('data-lost', 'false');
-  await expect(page.getByRole('alert')).toHaveCount(0);
-});
-
-test('détecteur : un passage rapide près d’un contact ne fait pas perdre', async ({
-  page,
-}) => {
-  await page.goto('/');
-  await page.getByRole('button', { name: 'ENTER' }).click();
-  await page.getByRole('button', { name: ':DÉTECTEUR' }).click();
-  await settle(page, '.al-trk-canvas');
-  const tracker = page.locator('.al-trk');
-  const box = (await page.locator('.al-trk-canvas').boundingBox())!;
-  const raw = (await tracker.getAttribute('data-contacts')) ?? '[]';
-  const [cx, cy] = (JSON.parse(raw) as [number, number][])[0];
-  await page.mouse.move(
-    box.x + (cx * box.width) / 560,
-    box.y + (cy * box.height) / 480,
-  );
-  await page.waitForTimeout(400);
-  await page.mouse.move(box.x + 5, box.y + 5);
-  await expect
-    .poll(async () => Number(await tracker.getAttribute('data-danger')), {
-      timeout: 20000,
-    })
-    .toBeLessThan(0.5);
-  await expect(tracker).toHaveAttribute('data-lost', 'false');
 });
 
 test('terminal : phrases proposées au clavier, retour depuis la saisie libre', async ({
@@ -746,23 +631,23 @@ test('mobile : menu burger, navigation et fermeture, curseur caché au toucher',
   const burger = page.getByRole('button', { name: 'MENU' });
   await expect(burger).toBeVisible();
   await expect(burger).toHaveAttribute('aria-expanded', 'false');
-  await expect(page.getByRole('button', { name: ':DÉTECTEUR' })).toBeHidden();
+  await expect(page.getByRole('button', { name: ':TERMINAL' })).toBeHidden();
   await burger.click();
   await expect(page.getByRole('button', { name: 'FERMER' })).toHaveAttribute(
     'aria-expanded',
     'true',
   );
-  await expect(page.getByRole('button', { name: ':DÉTECTEUR' })).toBeVisible();
+  await expect(page.getByRole('button', { name: ':TERMINAL' })).toBeVisible();
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('button', { name: ':DÉTECTEUR' })).toBeHidden();
+  await expect(page.getByRole('button', { name: ':TERMINAL' })).toBeHidden();
   await burger.click();
-  await page.getByRole('button', { name: ':DÉTECTEUR' }).click();
+  await page.getByRole('button', { name: ':TERMINAL' }).click();
   await expect(page.getByRole('button', { name: 'MENU' })).toBeVisible();
-  await expect(page.getByRole('button', { name: ':DÉTECTEUR' })).toBeHidden();
+  await expect(page.getByRole('button', { name: ':TERMINAL' })).toBeHidden();
   await expect
     .poll(() =>
       page.evaluate(
-        () => document.getElementById('detecteur')!.getBoundingClientRect().top,
+        () => document.getElementById('terminal')!.getBoundingClientRect().top,
       ),
     )
     .toBeLessThan(200);
@@ -797,10 +682,10 @@ test('défilement : le fond avance, l’œuf s’efface, les titres se révèlen
   await expect
     .poll(async () => Number(await egg.evaluate((el) => el.style.opacity)))
     .toBeLessThan(0.3);
-  await page.getByRole('button', { name: ':DÉTECTEUR' }).click();
-  await expect(page.locator('#detecteur .al-h2')).toHaveClass(/is-in/);
+  await page.getByRole('button', { name: ':TERMINAL' }).click();
+  await expect(page.locator('#terminal .al-h2')).toHaveClass(/is-in/);
   await expect(
-    page.getByRole('heading', { name: 'Rien ne bouge. Vraiment ?' }),
+    page.getByRole('heading', { name: 'Appelle la Compagnie.' }),
   ).toBeVisible();
 });
 

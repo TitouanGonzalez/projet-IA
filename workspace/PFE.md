@@ -11,7 +11,6 @@ Le design system de ce site est dans un autre dépôt : https://github.com/Titou
 - Un écran d’entrée façon terminal, avec un texte de démarrage qui s’écrit lettre par lettre.
 - Une scène d’accueil avec un œuf en fil de fer 3D, dessiné sur un canvas 2D, qui suit la souris.
 - Six cartes de personnages qui s’inclinent en 3D selon la souris, et un dossier qui s’ouvre avec une mini-biographie et des jauges fictives.
-- Un détecteur de mouvement : un radar en éventail avec balayage, des contacts cachés qui s’approchent de la sonde, un bip qui accélère quand on s’approche et une impulsion qui révèle tout. Rester trop longtemps collé à un contact fait perdre la partie.
 - Un jeu dans le terminal MU/TH/UR : six messages pour convaincre la Compagnie d’envoyer de l’aide. On répond en cliquant sur des phrases, et pour deux messages on peut aussi écrire le sien, que la Compagnie analyse. Trois phrases toutes faites sont proposées à chaque fois, pour ne jamais rester bloqué. Gagné si elle accepte, perdu sinon, avec six fins différentes.
 - Des œufs à ouvrir : un nouvel œuf toutes les 10 minutes, dix au maximum. Chaque œuf cache une carte parmi 24, de cinq raretés (commune, peu commune, rare, super rare, légendaire). Une page collection montre les cartes obtenues, les doublons et les cartes encore verrouillées.
 - Un faux scan de l’équipage au démarrage, avant le bouton ENTER.
