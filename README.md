@@ -84,7 +84,7 @@ npm run scan       # contrôle avant publication
 
 Ce dépôt est l'**application**. Son design system (couleurs, police, espacements, composants, règles) est dans un autre dépôt : https://github.com/TitouanGonzalez/Alien-DS
 
-Il se lance de la même façon, sur l'adresse http://127.0.0.1:4310, et son README explique comment. Ici, l'atelier du design system est aussi accessible à l'adresse `/#atelier`, avec les mêmes tokens et les mêmes composants.
+Il se lance de la même façon, mais sur l'adresse http://127.0.0.1:4311 (l'application utilise 4310, donc on peut lancer les deux en même temps), et son README explique comment. Ici, l'atelier du design system est aussi accessible à l'adresse `/#atelier`, avec les mêmes tokens et les mêmes composants.
 
 ## Ce que contient ce dépôt
 
