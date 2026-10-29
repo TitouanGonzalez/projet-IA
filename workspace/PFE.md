@@ -4,6 +4,8 @@ Nostromo : un petit site interactif sur l’équipage du cargo Nostromo, dans l�
 
 Page de fan, non officielle. Alien et ses personnages appartiennent à 20th Century Studios. Les textes sont originaux. Les portraits sont des images tirées des films, gardées en local pour une présentation privée, non publiées dans le dépôt.
 
+Le design system de ce site est dans un autre dépôt : https://github.com/TitouanGonzalez/Alien-DS
+
 ## Ce que fait le site
 
 - Un écran d’entrée façon terminal, avec un texte de démarrage qui s’écrit lettre par lettre.

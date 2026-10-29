@@ -16,7 +16,7 @@ const dimension = z
 const font = z
   .object({
     $type: z.literal('fontFamily'),
-    $value: z.enum(['system-ui', 'Arial', 'Georgia', 'Verdana']),
+    $value: z.enum(['system-ui', 'Arial', 'Georgia', 'Verdana', 'monospace']),
   })
   .strict();
 export const tokensSchema = z
@@ -31,7 +31,7 @@ export const tokensSchema = z
     'color.border': color,
     'color.danger': color,
     'color.success': color,
-    // Ajouté pour Checkpoint (verdict « avec adaptations »). Valeur par défaut :
+    // Ajouté pour un état d'avertissement (jaune). Valeur par défaut :
     // un état enregistré avant cet ajout reste lisible sans migration à la main.
     'color.warning': color.default({ $type: 'color', $value: '#8A4B0F' }),
     'color.focus': color,

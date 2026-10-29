@@ -16,27 +16,27 @@ test('boucle centrale réelle : diff, validation, propagation, recharge, annulat
     name: 'Action principale',
     exact: true,
   });
-  await expect(mainButton).toHaveCSS('background-color', 'rgb(49, 84, 196)');
+  await expect(mainButton).toHaveCSS('background-color', 'rgb(139, 196, 106)');
   await page.getByLabel('Valeur du token').fill('#8A3B20');
   await page.getByRole('button', { name: 'Proposer', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
-  await expect(dialog).toContainText('#3154C4');
+  await expect(dialog).toContainText('#8BC46A');
   await expect(dialog).toContainText('#8A3B20');
-  await expect(mainButton).toHaveCSS('background-color', 'rgb(49, 84, 196)');
+  await expect(mainButton).toHaveCSS('background-color', 'rgb(139, 196, 106)');
   await dialog.getByRole('button', { name: 'Ne pas appliquer' }).click();
-  await expect(mainButton).toHaveCSS('background-color', 'rgb(49, 84, 196)');
+  await expect(mainButton).toHaveCSS('background-color', 'rgb(139, 196, 106)');
   await page.getByRole('button', { name: 'Proposer', exact: true }).click();
   await dialog.getByRole('button', { name: 'Valider et enregistrer' }).click();
   await expect(mainButton).toHaveCSS('background-color', 'rgb(138, 59, 32)');
   await expect(
-    catalogue.getByRole('button', { name: 'Suivre ce jeu', exact: true }),
+    catalogue.getByRole('button', { name: 'Ouvrir le dossier', exact: true }),
   ).toHaveCSS('background-color', 'rgb(138, 59, 32)');
   await expect(
-    mobile.getByRole('button', { name: 'Suivre ce jeu', exact: true }),
+    mobile.getByRole('button', { name: 'Ouvrir le dossier', exact: true }),
   ).toHaveCSS('background-color', 'rgb(138, 59, 32)');
   await expect(
-    mobile.getByRole('button', { name: 'Un jeu', exact: true }),
+    mobile.getByRole('button', { name: 'Dossiers', exact: true }),
   ).toHaveCSS('background-color', 'rgb(138, 59, 32)');
   await page.reload();
   await expect(mainButton).toHaveCSS('background-color', 'rgb(138, 59, 32)');
@@ -51,11 +51,11 @@ test('boucle centrale réelle : diff, validation, propagation, recharge, annulat
     .getByRole('button', { name: 'Annuler la révision 1', exact: true })
     .click();
   await dialog.getByRole('button', { name: 'Valider et enregistrer' }).click();
-  await expect(mainButton).toHaveCSS('background-color', 'rgb(49, 84, 196)');
+  await expect(mainButton).toHaveCSS('background-color', 'rgb(139, 196, 106)');
   await expect(mainButton).toHaveCSS('padding-left', '22px');
   await expect(
-    mobile.getByRole('button', { name: 'Suivre ce jeu', exact: true }),
-  ).toHaveCSS('background-color', 'rgb(49, 84, 196)');
+    mobile.getByRole('button', { name: 'Ouvrir le dossier', exact: true }),
+  ).toHaveCSS('background-color', 'rgb(139, 196, 106)');
   await page.screenshot({ path: 'test-results/studio.png', fullPage: true });
 });
 
@@ -100,23 +100,29 @@ test('largeurs réelles, interactions, formulaire et desktop responsive', async 
     .getByRole('combobox', { name: 'Viewport', exact: true })
     .selectOption('1');
   await frame
-    .getByRole('button', { name: 'Suivre ce jeu', exact: true })
+    .getByRole('button', { name: 'Ouvrir le dossier', exact: true })
     .click();
-  await expect(frame.getByRole('button', { name: 'Jeu suivi' })).toBeVisible();
-  await frame.getByRole('button', { name: 'Trouver', exact: true }).click();
   await expect(
-    frame.getByText('Les jeux jouables pour toi apparaîtront ici.'),
+    frame.getByRole('button', { name: 'Dossier ouvert' }),
+  ).toBeVisible();
+  await frame.getByRole('button', { name: 'Détecteur', exact: true }).click();
+  await expect(
+    frame.getByText('Les contacts apparaissent quand tu approches.'),
   ).toBeVisible();
   await page
     .getByRole('combobox', { name: 'Scénario', exact: true })
     .selectOption('form');
-  await frame.getByLabel('Ton prénom').fill('Léa');
-  await frame.getByLabel('Ton adresse e-mail').fill('lea@example.com');
+  await frame.getByLabel('Ton matricule').fill('RIPLEY-E');
+  await frame
+    .getByLabel('Ton message à la Compagnie')
+    .fill('Nous demandons de l’aide.');
   await frame.getByRole('checkbox').check();
   await frame
-    .getByRole('button', { name: 'Créer mon profil', exact: true })
+    .getByRole('button', { name: 'Envoyer le message', exact: true })
     .click();
-  await expect(frame.getByText(/Profil de démonstration créé/)).toBeVisible();
+  await expect(
+    frame.getByText(/Message de démonstration envoyé/),
+  ).toBeVisible();
   await page.setViewportSize({ width: 700, height: 900 });
   expect(
     await page
@@ -189,7 +195,7 @@ test('V2 : contraste proposé immédiat sans modifier les composants enregistré
   await page
     .getByRole('combobox', { name: 'Token', exact: true })
     .selectOption('color.brand');
-  await page.getByLabel('Valeur du token').fill('#FFFFFF');
+  await page.getByLabel('Valeur du token').fill('#0B140A');
   await expect(
     page.getByText('Contraste proposé :', { exact: false }),
   ).toContainText('1.00:1');
@@ -198,7 +204,7 @@ test('V2 : contraste proposé immédiat sans modifier les composants enregistré
   ).toContainText('Contraste à améliorer');
   await expect(page.getByRole('dialog')).not.toBeVisible();
   const current = await (await page.request.get('/api/state')).json();
-  expect(current.tokens['color.brand'].$value).not.toBe('#FFFFFF');
+  expect(current.tokens['color.brand'].$value).not.toBe('#0B140A');
 });
 
 test('V2 : brief privé persistant, indépendant du mode IA', async ({

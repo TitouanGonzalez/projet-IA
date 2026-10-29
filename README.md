@@ -80,6 +80,12 @@ npm run scan       # contrôle avant publication
 - Un journal de bord où MU/TH/UR parle seule, et un fond en couloir de vaisseau qui avance avec le défilement.
 - Des petits sons d'interaction discrets et une musique d'ambiance rétro-futuriste.
 
+## Le design system
+
+Ce dépôt est l'**application**. Son design system (couleurs, police, espacements, composants, règles) est dans un autre dépôt : https://github.com/TitouanGonzalez/Alien-DS
+
+Il se lance de la même façon, sur l'adresse http://127.0.0.1:4310, et son README explique comment. Ici, l'atelier du design system est aussi accessible à l'adresse `/#atelier`, avec les mêmes tokens et les mêmes composants.
+
 ## Ce que contient ce dépôt
 
 - Le site Nostromo, qui s'ouvre à la racine (`/`).
