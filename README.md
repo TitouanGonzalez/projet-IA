@@ -1,13 +1,89 @@
 # Nostromo, un site interactif sur l'équipage
 
-Un petit site de fan, dans l'univers de la saga Alien, réalisé pour un exercice de design interactif : un écran d'entrée de terminal, un œuf en fil de fer 3D qui suit la souris, six dossiers de personnages en cartes inclinées en 3D, un détecteur de mouvement à la souris, un jeu à choix dans le terminal de l’ordinateur de bord, des œufs à ouvrir pour collectionner 24 cartes de cinq raretés, un faux scan de l’équipage au démarrage un journal de bord où MU/TH/UR parle seule, et un fond en couloir de vaisseau qui avance et s’étire avec le défilement, où chaque section est une scène plein écran qui surgit du fond : le défilement fait avancer dans le couloir au lieu de faire glisser la page (avec des phrases toutes faites, ou un texte libre si on préfère), des petits sons d'interaction discrets et une musique d'ambiance rétro-futuriste.
+Un site de fan dans l'univers de la saga Alien, réalisé pour un exercice de design interactif. Tout est fait à la main : dessin 3D, sons et musique, sans fichier audio ni bibliothèque 3D.
 
 ![Accueil de Nostromo](docs/images/nostromo-accueil.png)
+
+## Lancer le site
+
+Le site tourne sur ton ordinateur, dans ton navigateur. Il n'y a rien à créer en ligne.
+
+### 1. Ce qu'il te faut
+
+- **Node.js 22.12 ou plus récent** : télécharge-le sur https://nodejs.org (la version LTS convient). Vérifie dans un terminal avec `node -v`.
+- **Git** pour récupérer le dépôt, ou le bouton vert Code puis Download ZIP sur GitHub si tu préfères un zip.
+- Un navigateur récent (Chrome, Edge, Firefox ou Safari).
+- Le dépôt est privé : il faut avoir été ajouté comme collaborateur pour le télécharger.
+
+### 2. Récupérer et installer
+
+```bash
+git clone https://github.com/TitouanGonzalez/pfe.git
+cd pfe
+npm ci
+```
+
+### 3. Compiler puis lancer
+
+```bash
+npm run build
+npm start
+```
+
+Laisse le terminal ouvert : le site s'arrête quand tu le fermes (ou avec Ctrl+C).
+
+### 4. Ouvrir dans le navigateur
+
+Va sur **http://127.0.0.1:4310**. Tape bien `127.0.0.1`, pas `localhost` : le serveur refuse les autres adresses.
+
+- Clique sur **ENTER**. Le son démarre à ce moment-là (un bouton en haut le coupe).
+- **Défile** pour avancer dans le couloir du vaisseau : chaque partie arrive du fond, une par une. Le menu en haut (ou le bouton MENU sur téléphone) permet de sauter directement à une partie.
+- L'atelier de design system de l'enseignant est toujours là : **http://127.0.0.1:4310/#atelier**.
+
+### Si ça ne marche pas
+
+- `npm: command not found` : Node.js n'est pas installé, ou le terminal doit être rouvert après l'installation.
+- Le port 4310 est déjà pris : un ancien site tourne encore. Ferme le terminal qui le lance, ou change de port avec `PORT=4311 npm start` (sous PowerShell : `$env:PORT=4311; npm start`).
+- La page affiche Hôte refusé : tu as tapé `localhost`. Utilise `127.0.0.1`.
+- Tu as modifié le code et rien ne change : refais `npm run build`, puis relance `npm start`.
+- Pas de portraits sur les cartes : c'est normal, les images des films ne sont pas dans le dépôt (voir les mentions plus bas). Les cartes affichent alors des icônes dessinées.
+
+### Voir le site sur un téléphone
+
+Ton téléphone et ton ordinateur doivent être sur le même wifi.
+
+```bash
+npm run build
+npm run phone
+```
+
+Ouvre dans le navigateur du téléphone l'adresse affichée dans le terminal (du type `http://192.168.x.x:4311`). Ce petit serveur ne sert que le site, pas l'atelier.
+
+### Vérifier que tout fonctionne
+
+```bash
+npm run check      # types
+npm test           # tests unitaires
+npx playwright install chromium   # une seule fois, pour les tests du navigateur
+npm run test:e2e   # parcours complets dans un vrai navigateur
+npm run scan       # contrôle avant publication
+```
+
+## Ce que contient le site
+
+- Un écran de démarrage de terminal, avec un faux scan de l'équipage.
+- Un œuf en fil de fer 3D qui suit la souris et s'ouvre quand on descend.
+- Six dossiers de personnages en cartes inclinées en 3D.
+- Un détecteur de mouvement à la souris, où rester trop près d'un contact fait perdre.
+- Un jeu à choix dans le terminal de l'ordinateur de bord, avec des phrases toutes faites ou un texte libre.
+- Des œufs à ouvrir pour collectionner 24 cartes de cinq raretés, avec des effets spéciaux pour les légendaires.
+- Un journal de bord où MU/TH/UR parle seule, et un fond en couloir de vaisseau qui avance avec le défilement.
+- Des petits sons d'interaction discrets et une musique d'ambiance rétro-futuriste.
 
 ## Ce que contient ce dépôt
 
 - Le site Nostromo, qui s'ouvre à la racine (`/`).
-- Le banc d'essai DS-Studio de l'enseignant, repris ci-dessous, toujours accessible à l'adresse `/#atelier`.
+- Le banc d'essai DS-Studio de l'enseignant, repris plus bas, toujours accessible à l'adresse `/#atelier`.
 - Le contexte du projet dans `workspace/` : `PFE.md` (le sujet), `DESIGN_RULES.md` (les règles de conception) et `DECISIONS.md` (le journal des choix, limites comprises).
 
 ## Ce qui est fait à la main
@@ -21,15 +97,7 @@ Un petit site de fan, dans l'univers de la saga Alien, réalisé pour un exercic
 
 Page de fan, non officielle. Alien et ses personnages appartiennent à 20th Century Studios. Les textes sont originaux, sans citation du film. Les jauges des dossiers sont fictives. Les portraits des personnages sont des images tirées des films : ils ne sont pas dans le dépôt, chacun les dépose en local dans `app/client/alien/images/` (voir le `LISEZMOI.md` de ce dossier).
 
-## Lancer le site
-
-```
-npm ci
-npm run build
-npm start
-```
-
-Puis ouvrir http://127.0.0.1:4310. La suite de ce fichier est le README d'origine du starter.
+La suite de ce fichier est le README d'origine du starter.
 
 ---
 
